@@ -1,6 +1,6 @@
 import os
 import datetime
-
+from utils import *
 
 class Logger(object):
     """
@@ -25,8 +25,7 @@ class Logger(object):
         self.params = params
         self.root = logdir
         # check if log directory exist
-        if not os.path.isdir(self.root):
-            os.mkdir(self.root)
+        check_dir(logdir)
 
         # check if config file is exist
         self.config_fn = "log.cfg"

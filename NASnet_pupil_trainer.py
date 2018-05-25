@@ -127,8 +127,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "simple_2"
-    model_comment = "simple with batch normalization"
+    model_name = "simple"
+    model_comment = "a simple model to just run and get answer. with 5 convolution layer and  fully connected"
 
     logger = Logger(model_name, model_comment, config, logdir="models/" + model_name + "/")
     logger.log("Start training model...")

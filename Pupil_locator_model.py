@@ -6,10 +6,12 @@ class Model(object):
     Convolution model:
     """
 
-    def __init__(self, cfg):
+    def __init__(self, model_name, cfg, logger):
         self.cfg = cfg
+        self.model_name = model_name
+        self.logger = logger
+        self.model_dir = "models/" + model_name + "/"
         self.mode = 'train'
-        # self.logger = logger
         self.max_gradient_norm = cfg["MAX_GRADIANT_NORM"]
         self.global_step = tf.Variable(0, trainable=False, name='global_step')
         self.global_epoch_step = tf.Variable(0, trainable=False, name='global_epoch_step')
@@ -17,7 +19,7 @@ class Model(object):
         self.build_model()
 
     def build_model(self):
-        print("building the model...")
+        self.logger.log("building the model...")
 
         self.init_placeholders()
         self.init_layers()
@@ -41,8 +43,11 @@ class Model(object):
         self.keep_prob = tf.placeholder(dtype=tf.float32,
                                         shape=(),
                                         name="keep_prob")
+        self.train_flag = tf.placeholder(dtype=tf.bool, name='flag_placeholder')
+
 
     def init_layers(self):
+
         cnn_input = self.X
         xavi = tf.contrib.layers.xavier_initializer_conv2d()
         assert len(self.cfg["filter_sizes"]) == len(self.cfg["n_filters"])
@@ -55,32 +60,54 @@ class Model(object):
                                          activation=tf.nn.leaky_relu,
                                          kernel_initializer=xavi)
 
-            # max pooling only on layers which are set True
-            if self.cfg["max_pool"][i] == 1:
-                stride = 2
-                if self.cfg["filter_sizes"][i] == 1:
-                    stride = 1
-                cnn_input = tf.layers.max_pooling2d(cnn_input, pool_size=2, strides=stride)
+            cnn_input = tf.layers.batch_normalization(cnn_input,
+                                                      training=self.train_flag,
+                                                      momentum=0.99,
+                                                      epsilon=0.001,
+                                                      center=True,
+                                                      scale=True)
+
+            cnn_input = tf.layers.max_pooling2d(cnn_input, pool_size=2, strides=2)
 
             # print what happen to layers! :)
-            print("layer {} conv2d: {}".format(i, cnn_input.get_shape()))
+            self.logger.log("layer {} conv2d: {}".format(i, cnn_input.get_shape()))
 
-        # ## Define fully connected layer
-        # # First we need to reshape cnn output to [batch_size, -1]
-        # fc_input = tf.contrib.layers.flatten(cnn_input)
-        #
-        # for h in self.cfg["fc_layers"]:
-        #     # by using fully_connected, tf will take care of X*W+b
-        #     fc_input = tf.contrib.layers.fully_connected(fc_input, h)
-        #
-        #     # use batch normalization. With batch normalization we can get 1% better results
-        #     # fc_input = tf.layers.batch_normalization(fc_input, training=(self.mode == "train"))
-        #
-        #     # use dropout
-        #     # fc_input = tf.nn.dropout(fc_input, keep_prob=self.keep_prob)
+        # Define fully connected layer
+        # First we need to reshape cnn output to [batch_size, -1]
+        a = tf.contrib.layers.flatten(cnn_input)
+        h_prev = a.get_shape().as_list()[1]
+        for i, h in enumerate(self.cfg["fc_layers"]):
+            # by using fully_connected, tf will take care of X*W+b
+            with tf.name_scope("fc_layer" + str(i)):
+                with tf.name_scope("weight_" + str(i)):
+                    initial_value = tf.truncated_normal([h_prev, h], stddev=0.001)
+                    w = tf.Variable(initial_value, name="fc_w_" + str(i))
+                    self.variable_summaries(w)
 
-        # self.logits = tf.contrib.layers.fully_connected(cnn_input, self.cfg["output_dim"], activation_fn=None)
-        self.logits = tf.reshape(cnn_input, shape=(-1, self.cfg["output_dim"]))
+                with tf.name_scope("bias_" + str(i)):
+                    b = tf.Variable(tf.zeros([h]), name='fc_b_' + str(i))
+                    self.variable_summaries(b)
+
+                with tf.name_scope("Wx_plus_b_" + str(i)):
+                    z = tf.matmul(a, w) + b
+
+                with tf.name_scope("L_ReLu_" + str(i)):
+                    a = tf.nn.leaky_relu(z)
+
+            h_prev = h
+            # fc_input = tf.contrib.layers.fully_connected(fc_input, h, activation_fn=tf.nn.leaky_relu)
+
+            # use batch normalization. With batch normalization we can get 1% better results
+            # fc_input = tf.layers.batch_normalization(fc_input, training=(self.mode == "train"))
+
+            # use dropout
+            # fc_input = tf.nn.dropout(fc_input, keep_prob=self.keep_prob)
+
+            # show fully connected layers shape
+            self.logger.log("layer {} fully connected: {}".format(i, a.get_shape()))
+
+        self.logits = tf.contrib.layers.fully_connected(a, self.cfg["output_dim"], activation_fn=None)
+        # self.logits = tf.reshape(cnn_input, shape=(-1, self.cfg["output_dim"]))
         self.loss = tf.losses.mean_squared_error(self.Y, self.logits)
 
         # Training summary for the current batch_loss
@@ -91,24 +118,26 @@ class Model(object):
 
     def init_optimizer(self):
         print("setting optimizer..")
-        # trainable_params = tf.trainable_variables()
+        trainable_params = tf.trainable_variables()
 
-        learning_rate = tf.train.exponential_decay(self.cfg["learning_rate"],
-                                                   self.global_step,
-                                                   self.cfg["decay_step"],
-                                                   self.cfg["decay_rate"],
-                                                   staircase=True)
+        # learning_rate = tf.train.exponential_decay(self.cfg["learning_rate"],
+        #                                            self.global_step,
+        #                                            self.cfg["decay_step"],
+        #                                            self.cfg["decay_rate"],
+        #                                            staircase=True)
         # TODO: need to handle all optimization
-        self.opt = tf.train.GradientDescentOptimizer(learning_rate=self.cfg["learning_rate"]).minimize(self.loss, global_step=self.global_step)
-        # # Compute gradients of loss w.r.t. all trainable variables
-        # gradients = tf.gradients(self.loss, trainable_params)
-        #
-        # # Clip gradients by a given maximum_gradient_norm
-        # clip_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
-        #
-        # # Update the model
-        # self.updates = self.opt.apply_gradients(zip(clip_gradients, trainable_params),
-        #                                         global_step=self.global_step)
+        # self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"]).minimize(self.loss,
+        #                                                                         global_step=self.global_step)
+        self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"])
+        # Compute gradients of loss w.r.t. all trainable variables
+        gradients = tf.gradients(self.loss, trainable_params)
+
+        # Clip gradients by a given maximum_gradient_norm
+        clip_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
+
+        # Update the model
+        self.update = self.opt.apply_gradients(zip(clip_gradients, trainable_params),
+                                               global_step=self.global_step)
 
     def train(self, sess, images, labels, keep_prob):
         """Run a train step of the model feeding the given inputs.
@@ -127,9 +156,10 @@ class Model(object):
 
         input_feed = {self.X.name: images,
                       self.Y.name: labels,
-                      self.keep_prob: keep_prob}
+                      self.keep_prob: keep_prob,
+                      self.train_flag: True}
 
-        output_feed = [self.opt,  # Update Op that does optimization
+        output_feed = [self.update,  # Update Op that does optimization
                        self.loss,  # Loss for current batch
                        self.summary_op]
 
@@ -151,7 +181,8 @@ class Model(object):
         self.mode = "eval"
         input_feed = {self.X.name: images,
                       self.Y.name: labels,
-                      self.keep_prob: 1.0}
+                      self.keep_prob: 1.0,
+                      self.train_flag: False}
 
         output_feed = [self.loss,  # Loss for current batch
                        self.summary_op,
@@ -170,3 +201,21 @@ class Model(object):
         outputs = sess.run(output_feed, input_feed)
 
         return outputs[0]
+
+    def restore(self, sess, path, var_list=None):
+        # var_list = None returns the list of all saveable variables
+        saver = tf.train.Saver(var_list)
+        saver.restore(sess, save_path=path)
+        self.logger.log('model restored from %s' % path)
+
+    def variable_summaries(self, var):
+        """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+        with tf.name_scope('summaries'):
+            mean = tf.reduce_mean(var)
+            tf.summary.scalar('mean', mean)
+            with tf.name_scope('stddev'):
+                stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+            tf.summary.scalar('stddev', stddev)
+            tf.summary.scalar('max', tf.reduce_max(var))
+            tf.summary.scalar('min', tf.reduce_min(var))
+            tf.summary.histogram('histogram', var)

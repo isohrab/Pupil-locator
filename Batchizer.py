@@ -40,7 +40,7 @@ class Batchizer(object):
             for row in self.data_list:
                 image = Image.open(row[0], 'r')
                 # todo: add noise here
-                label = np.asarray(row[1:], dtype=np.float32)
+                label = np.asarray(row[1:3], dtype=np.float32)
                 images.append(np.expand_dims(np.array(image), -1))
                 labels.append(label)
                 if len(images) == self.batch_size:

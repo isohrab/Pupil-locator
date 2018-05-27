@@ -9,7 +9,7 @@ config["n_filters"] =    [16, 16, 64, 64, 128, 128, 256, 256, 512, 512, 1024, 51
 config["filter_sizes"] = [3 , 3 , 3 , 3 , 3  , 3  , 3  , 3  , 3  , 3  , 3   , 3  , 1]
 config["max_pool"] =     [1 , 0 , 1 , 0 , 1  , 0  , 1  , 0  , 1  , 0  , 1   , 1  , 0]
 # check layer size >>    [96, 96, 48, 48, 24 , 24 , 12 , 12 , 6  , 6  , 3   , 2  , 1]
-config["learning_rate"] = 0.01
+config["learning_rate"] = 0.007
 config["decay_rate"] = 0.95
 config["decay_step"] = 2000
 config["optimizer"] = "adam"

@@ -211,7 +211,7 @@ class Model(object):
             # TODO: need to handle all optimization
             # self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"]).minimize(self.loss,
             #                                                                         global_step=self.global_step)
-            self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"])
+            self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
             # Compute gradients of loss w.r.t. all trainable variables
             gradients = tf.gradients(self.loss, trainable_params)
 

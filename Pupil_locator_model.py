@@ -47,7 +47,6 @@ class Model(object):
 
 
     def init_layers(self):
-
         cnn_input = self.X
         xavi = tf.contrib.layers.xavier_initializer_conv2d()
         assert len(self.cfg["filter_sizes"]) == len(self.cfg["n_filters"])
@@ -66,7 +65,7 @@ class Model(object):
                                                       epsilon=0.001,
                                                       center=True,
                                                       scale=True)
-
+            cnn_input = tf.nn.dropout(cnn_input, self.keep_prob)
             cnn_input = tf.layers.max_pooling2d(cnn_input, pool_size=2, strides=2)
 
             # print what happen to layers! :)
@@ -118,26 +117,36 @@ class Model(object):
 
     def init_optimizer(self):
         print("setting optimizer..")
-        trainable_params = tf.trainable_variables()
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            trainable_params = tf.trainable_variables()
+            l2_loss = 0
+            for var in trainable_params:
+                if var.name.find("weight") >= 0 or var.name.find("kernel") >= 0:
+                    l2_loss += 0.01 * tf.nn.l2_loss(var)
 
-        # learning_rate = tf.train.exponential_decay(self.cfg["learning_rate"],
-        #                                            self.global_step,
-        #                                            self.cfg["decay_step"],
-        #                                            self.cfg["decay_rate"],
-        #                                            staircase=True)
-        # TODO: need to handle all optimization
-        # self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"]).minimize(self.loss,
-        #                                                                         global_step=self.global_step)
-        self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"])
-        # Compute gradients of loss w.r.t. all trainable variables
-        gradients = tf.gradients(self.loss, trainable_params)
 
-        # Clip gradients by a given maximum_gradient_norm
-        clip_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
 
-        # Update the model
-        self.update = self.opt.apply_gradients(zip(clip_gradients, trainable_params),
-                                               global_step=self.global_step)
+            final_loss = self.loss + l2_loss
+
+            learning_rate = tf.train.exponential_decay(self.cfg["learning_rate"],
+                                                       self.global_step,
+                                                       self.cfg["decay_step"],
+                                                       self.cfg["decay_rate"],
+                                                       staircase=True)
+            # TODO: need to handle all optimization
+            # self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"]).minimize(self.loss,
+            #                                                                         global_step=self.global_step)
+            self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            # Compute gradients of loss w.r.t. all trainable variables
+            gradients = tf.gradients(final_loss, trainable_params)
+
+            # Clip gradients by a given maximum_gradient_norm
+            clip_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
+
+            # Update the model
+            self.update = self.opt.apply_gradients(zip(clip_gradients, trainable_params),
+                                                   global_step=self.global_step)
 
     def train(self, sess, images, labels, keep_prob):
         """Run a train step of the model feeding the given inputs.

@@ -1,6 +1,6 @@
 config = dict()
-config["batch_size"] = 64
-config["total_steps"] = 100000
+config["batch_size"] = 32
+config["total_steps"] = 200000
 config["validate_every"] = 2000
 config["validate_for"] = 500
 config["save_every"] = 6000
@@ -13,7 +13,7 @@ config["fc_layers"] = [256, 128]
 # check layer size >>    [96, 48, 24, 12 , ]
 config["learning_rate"] = 0.001
 config["decay_rate"] = 0.95
-config["decay_step"] = 1000
+config["decay_step"] = 2000
 config["optimizer"] = "adam"
 config["keep_prob"] = 0.85
 config["MAX_GRADIANT_NORM"] = 5.0
@@ -22,7 +22,7 @@ config["image_width"] = 192
 config["image_height"] = 192
 config["image_channel"] = 1
 # Output shape
-config["output_dim"] = 5
+config["output_dim"] = 2
 
 
 

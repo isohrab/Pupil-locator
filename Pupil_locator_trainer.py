@@ -24,21 +24,29 @@ def create_model(session, model_name, logger):
 
 
 def print_predictions(result, logger):
+    # logger.log("########### Print  Predictions ################")
+    # logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t a\t\t]")
+    # for r in result:
+    #     pred = r[0]
+    #     y = r[1]
+    #     logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}".format(y[0],
+    #                                                                             y[1],
+    #                                                                             y[2],
+    #                                                                             y[3],
+    #                                                                             y[4]))
+    #     logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}\n".format(pred[0],
+    #                                                                               pred[1],
+    #                                                                               pred[2],
+    #                                                                               pred[3],
+    #                                                                               pred[4]))
+
     logger.log("########### Print  Predictions ################")
-    logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t a\t\t]")
+    logger.log("label: [\tx\t y")
     for r in result:
         pred = r[0]
         y = r[1]
-        logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}".format(y[0],
-                                                                                y[1],
-                                                                                y[2],
-                                                                                y[3],
-                                                                                y[4]))
-        logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}\n".format(pred[0],
-                                                                                  pred[1],
-                                                                                  pred[2],
-                                                                                  pred[3],
-                                                                                  pred[4]))
+        logger.log("truth: {0:8.2f} {1:8.2f} ".format(y[0], y[1]))
+        logger.log("pred : {0:8.2f} {1:8.2f}\n".format(pred[0], pred[1]))
 
     logger.log("###############  End  ###################")
 
@@ -127,8 +135,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "simple_2"
-    model_comment = "simple with batch normalization"
+    model_name = "simple_XY_l2_loss"
+    model_comment = "simple with X Y labels only. batch normalization + drop out, add l2 regularization"
 
     logger = Logger(model_name, model_comment, config, logdir="models/" + model_name + "/")
     logger.log("Start training model...")

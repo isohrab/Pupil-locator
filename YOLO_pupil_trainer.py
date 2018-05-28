@@ -62,9 +62,16 @@ def main(model_name, logger):
 
             saver = tf.train.Saver(max_to_keep=3)
 
+            root_path = "data"
+            train_csv = "train_data.csv"
+            valid_csv = "valid_data.csv"
+
+            train_path = os.path.join(root_path, train_csv)
+            valid_path = os.path.join(root_path, valid_csv)
             # initial batchizer
-            train_batchizer = Batchizer('data/train_data.csv', config["batch_size"])
-            valid_batchizer = Batchizer('data/valid_data.csv', config["batch_size"])
+            train_batchizer = Batchizer(train_path, config["batch_size"])
+            valid_batchizer = Batchizer(valid_path, config["batch_size"])
+
             train_batches = train_batchizer.batches()
             valid_batches = valid_batchizer.batches()
 

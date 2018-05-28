@@ -66,9 +66,16 @@ def main(model_name, logger):
 
             saver = tf.train.Saver(max_to_keep=3)
 
+            root_path = "data"
+            train_csv = "train_data.csv"
+            valid_csv = "valid_data.csv"
+
+            train_path = os.path.join(root_path, train_csv)
+            valid_path = os.path.join(root_path, valid_csv)
             # initial batchizer
-            train_batchizer = Batchizer('data/train_data.csv', config["batch_size"])
-            valid_batchizer = Batchizer('data/valid_data.csv', config["batch_size"])
+            train_batchizer = Batchizer(train_path, config["batch_size"])
+            valid_batchizer = Batchizer(valid_path, config["batch_size"])
+
             train_batches = train_batchizer.batches()
             valid_batches = valid_batchizer.batches()
 
@@ -135,8 +142,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "simple_XYWH_l2_loss"
-    model_comment = "simple with X Y labels only. batch normalization + drop out, add l2 regularization"
+    model_name = "test"
+    model_comment = "simple with X Y W H labels only. batch normalization + drop out, add l2 regularization." \
+                    " normalized input"
 
     logger = Logger(model_name, model_comment, config, logdir="models/" + model_name + "/")
     logger.log("Start training model...")

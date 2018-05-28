@@ -3,6 +3,7 @@ from random import shuffle
 from xml.etree import ElementTree
 import numpy as np
 import csv
+from utils import *
 
 def process_data(original_path, portion):
     """
@@ -78,10 +79,8 @@ def process_data(original_path, portion):
 
 def saveCSV(data_list, output_name, save_path):
     # save a list into a CSV file
-    if os.path.isdir(save_path):
-        p = os.path.join(save_path, output_name)
-    else:
-        raise FileNotFoundError
+    check_dir(save_path)
+    p = os.path.join(save_path, output_name)
 
     with open(p, "w") as f:
         writer = csv.writer(f)

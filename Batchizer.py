@@ -37,17 +37,20 @@ class Batchizer(object):
 
             images = []
             labels = []
+            img_names = []
             for row in self.data_list:
                 image = Image.open(row[0], 'r')
                 # todo: add noise here
-                label = np.asarray(row[1:3], dtype=np.float32)
+                label = np.asarray(row[1:5], dtype=np.float32)
                 images.append(np.expand_dims(np.array(image), -1))
                 labels.append(label)
+                img_names.append(row[0])
                 if len(images) == self.batch_size:
-                    yield images, labels
+                    yield images, labels, img_names
                     images = []
                     labels = []
+                    img_names = []
 
             # just yield reminded data
             if len(images) > 0:
-                yield images, labels
+                yield images, labels, img_names

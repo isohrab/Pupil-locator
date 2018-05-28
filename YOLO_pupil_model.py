@@ -189,7 +189,9 @@ class Model(object):
 
         # Logits
         self.logits = tf.reshape(x, shape=(-1, 5), name='y')
-        self.loss = tf.losses.mean_squared_error(self.Y, self.logits)
+        self.loss = tf.losses.mean_squared_error(self.Y,
+                                                 self.logits,
+                                                 weights=[[3.0, 3.0, 1.0, 1.0]])
 
         # Training summary for the current batch_loss
         tf.summary.scalar('loss', self.loss)

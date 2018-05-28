@@ -27,8 +27,12 @@ def print_predictions(result, logger):
     logger.log("########### Print  Predictions ################")
     logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t a\t\t]")
     for r in result:
-        pred = r[1]
+
         y = r[0]
+        pred = r[1]
+        img_path = r[2]
+
+        logger.log("Path: " + img_path)
         logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}".format(y[0],
                                                                                 y[1],
                                                                                 y[2],
@@ -67,7 +71,7 @@ def main(model_name, logger):
             while model.global_step.eval() < config["total_steps"]:
 
                 with tqdm(total=config["validate_every"], unit="batches") as t:
-                    for x, y in train_batches:
+                    for x, y, _ in train_batches:
                         if x is None:
                             continue
 
@@ -83,7 +87,7 @@ def main(model_name, logger):
                 valid_counter = 0
                 pred_result = []
                 with tqdm(total=config["validate_for"], unit="batches") as t:
-                    for x, y in valid_batches:
+                    for x, y, img in valid_batches:
                         if x is None:
                             continue
 
@@ -96,7 +100,7 @@ def main(model_name, logger):
                         # do it with a little chance! to reduce the size of output
                         if np.random.rand() > 0.95:
                             r = np.random.randint(0, high=len(x))
-                            pred_result.append([y[r], pred[r]])
+                            pred_result.append([y[r], pred[r], img[r]])
 
                         t.update(1)
 
@@ -127,7 +131,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "YOLO"
+    model_name = "YOLO_l2_weighted"
     model_comment = "Yolo model."
 
     logger = Logger(model_name, model_comment, config, logdir="models/" + model_name + "/")

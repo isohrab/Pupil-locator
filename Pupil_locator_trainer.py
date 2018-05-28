@@ -24,31 +24,31 @@ def create_model(session, model_name, logger):
 
 
 def print_predictions(result, logger):
+    logger.log("########### Print  Predictions ################")
+    logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t")
+    for r in result:
+        pred = r[0] * config["image_width"]
+        y = r[1] * config["image_width"]
+        img_path = r[2]
+        logger.log("Path: " + img_path)
+        logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f}".format(y[0],
+                                                                       y[1],
+                                                                       y[2],
+                                                                       y[3]))
+        logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f}\n".format(pred[0],
+                                                                         pred[1],
+                                                                         pred[2],
+                                                                         pred[3]))
+
     # logger.log("########### Print  Predictions ################")
-    # logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t a\t\t]")
+    # logger.log("label: [\tx\t y")
     # for r in result:
     #     pred = r[0]
     #     y = r[1]
-    #     logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}".format(y[0],
-    #                                                                             y[1],
-    #                                                                             y[2],
-    #                                                                             y[3],
-    #                                                                             y[4]))
-    #     logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}\n".format(pred[0],
-    #                                                                               pred[1],
-    #                                                                               pred[2],
-    #                                                                               pred[3],
-    #                                                                               pred[4]))
-
-    logger.log("########### Print  Predictions ################")
-    logger.log("label: [\tx\t y")
-    for r in result:
-        pred = r[0]
-        y = r[1]
-        logger.log("truth: {0:8.2f} {1:8.2f} ".format(y[0], y[1]))
-        logger.log("pred : {0:8.2f} {1:8.2f}\n".format(pred[0], pred[1]))
-
-    logger.log("###############  End  ###################")
+    #     logger.log("truth: {0:8.2f} {1:8.2f} ".format(y[0], y[1]))
+    #     logger.log("pred : {0:8.2f} {1:8.2f}\n".format(pred[0], pred[1]))
+    #
+    # logger.log("###############  End  ###################")
 
 
 def main(model_name, logger):
@@ -75,7 +75,7 @@ def main(model_name, logger):
             while model.global_step.eval() < config["total_steps"]:
 
                 with tqdm(total=config["validate_every"], unit="batches") as t:
-                    for x, y in train_batches:
+                    for x, y, _ in train_batches:
                         if x is None:
                             continue
 
@@ -91,7 +91,7 @@ def main(model_name, logger):
                 valid_counter = 0
                 pred_result = []
                 with tqdm(total=config["validate_for"], unit="batches") as t:
-                    for x, y in valid_batches:
+                    for x, y, img in valid_batches:
                         if x is None:
                             continue
 
@@ -104,7 +104,7 @@ def main(model_name, logger):
                         # do it with a little chance! to reduce the size of output
                         if np.random.rand() > 0.95:
                             r = np.random.randint(0, high=len(x))
-                            pred_result.append([pred[r], y[r]])
+                            pred_result.append([y[r], pred[r], img[r]])
 
                         t.update(1)
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "simple_XY_l2_loss"
+    model_name = "simple_XYWH_l2_loss"
     model_comment = "simple with X Y labels only. batch normalization + drop out, add l2 regularization"
 
     logger = Logger(model_name, model_comment, config, logdir="models/" + model_name + "/")

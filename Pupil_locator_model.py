@@ -39,6 +39,7 @@ class Model(object):
         self.Y = tf.placeholder(dtype=tf.float32,
                                 shape=(None, self.cfg["output_dim"]),
                                 name="ground_truth")
+        self.Y = self.Y / self.cfg["image_width"]
 
         self.keep_prob = tf.placeholder(dtype=tf.float32,
                                         shape=(),
@@ -107,7 +108,9 @@ class Model(object):
 
         self.logits = tf.contrib.layers.fully_connected(a, self.cfg["output_dim"], activation_fn=None)
         # self.logits = tf.reshape(cnn_input, shape=(-1, self.cfg["output_dim"]))
-        self.loss = tf.losses.mean_squared_error(self.Y, self.logits)
+        self.loss = tf.losses.mean_squared_error(self.Y,
+                                                 self.logits,
+                                                 weights=[[3.0, 3.0, 1.0, 1.0]])
 
         # Training summary for the current batch_loss
         tf.summary.scalar('loss', self.loss)

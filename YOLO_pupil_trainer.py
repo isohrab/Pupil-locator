@@ -27,22 +27,19 @@ def print_predictions(result, logger):
     logger.log("########### Print  Predictions ################")
     logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t a\t\t]")
     for r in result:
-
         y = r[0]
-        pred = r[1]
+        pred = r[1] #* config["image_width"]
         img_path = r[2]
 
         logger.log("Path: " + img_path)
-        logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}".format(y[0],
-                                                                                y[1],
-                                                                                y[2],
-                                                                                y[3],
-                                                                                y[4]))
-        logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}\n".format(pred[0],
-                                                                                  pred[1],
-                                                                                  pred[2],
-                                                                                  pred[3],
-                                                                                  pred[4]))
+        logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f}".format(y[0],
+                                                                       y[1],
+                                                                       y[2],
+                                                                       y[3]))
+        logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f}\n".format(pred[0],
+                                                                         pred[1],
+                                                                         pred[2],
+                                                                         pred[3]))
 
     logger.log("###############  End  ###################")
 
@@ -62,7 +59,7 @@ def main(model_name, logger):
 
             saver = tf.train.Saver(max_to_keep=3)
 
-            root_path = "data"
+            root_path = "data/"
             train_csv = "train_data.csv"
             valid_csv = "valid_data.csv"
 
@@ -99,7 +96,7 @@ def main(model_name, logger):
                             continue
 
                         batch_loss, _, pred = model.eval(sess, x, y)
-                        t.set_description_str("batch_loss:{0:8.2f}".format(batch_loss))
+                        t.set_description_str("batch_loss:{0:2.4f}".format(batch_loss))
                         valid_loss += batch_loss
                         valid_counter += 1
 
@@ -115,7 +112,7 @@ def main(model_name, logger):
                             break
 
                 print_predictions(pred_result, logger)
-                logger.log('Step:{0:6}: train loss:{1:8.2f}, validation loss:{2:8.2f}'.format(model.global_step.eval(),
+                logger.log('Step:{0:6}: train loss:{1:4.4f}, validation loss:{2:4.4f}'.format(model.global_step.eval(),
                                                                                               epoch_loss,
                                                                                               valid_loss))
 
@@ -138,8 +135,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "YOLO_l2_weighted"
-    model_comment = "Yolo model."
+    model_name = "YOLO_half"
+    model_comment = "Yolo model with half karnels and l2 and batch norm"
 
     logger = Logger(model_name, model_comment, config, logdir="models/" + model_name + "/")
     logger.log("Start training model...")

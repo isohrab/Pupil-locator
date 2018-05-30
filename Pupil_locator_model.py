@@ -39,7 +39,6 @@ class Model(object):
         self.Y = tf.placeholder(dtype=tf.float32,
                                 shape=(None, self.cfg["output_dim"]),
                                 name="ground_truth")
-        self.Y = self.Y / self.cfg["image_width"]
 
         self.keep_prob = tf.placeholder(dtype=tf.float32,
                                         shape=(),
@@ -53,6 +52,7 @@ class Model(object):
         assert len(self.cfg["filter_sizes"]) == len(self.cfg["n_filters"])
 
         for i in range(len(self.cfg["filter_sizes"])):
+            cnn_input = tf.nn.dropout(cnn_input, self.keep_prob)
             cnn_input = tf.layers.conv2d(cnn_input,
                                          filters=self.cfg["n_filters"][i],
                                          kernel_size=self.cfg["filter_sizes"][i],
@@ -66,7 +66,6 @@ class Model(object):
                                                       epsilon=0.001,
                                                       center=True,
                                                       scale=True)
-            cnn_input = tf.nn.dropout(cnn_input, self.keep_prob)
             cnn_input = tf.layers.max_pooling2d(cnn_input, pool_size=2, strides=2)
 
             # print what happen to layers! :)
@@ -108,7 +107,8 @@ class Model(object):
 
         self.logits = tf.contrib.layers.fully_connected(a, self.cfg["output_dim"], activation_fn=None)
         # self.logits = tf.reshape(cnn_input, shape=(-1, self.cfg["output_dim"]))
-        self.loss = tf.losses.mean_squared_error(self.Y,
+
+        self.loss = tf.losses.mean_squared_error(Y_norm,
                                                  self.logits,
                                                  weights=[[3.0, 3.0, 1.0, 1.0]])
 

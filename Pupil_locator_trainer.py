@@ -27,9 +27,11 @@ def print_predictions(result, logger):
     logger.log("########### Print  Predictions ################")
     logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t")
     for r in result:
-        pred = r[0] * config["image_width"]
-        y = r[1] * config["image_width"]
+
+        y = r[0]
+        pred = r[1]
         img_path = r[2]
+
         logger.log("Path: " + img_path)
         logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f}".format(y[0],
                                                                        y[1],
@@ -66,7 +68,7 @@ def main(model_name, logger):
 
             saver = tf.train.Saver(max_to_keep=3)
 
-            root_path = "data"
+            root_path = "data/"
             train_csv = "train_data.csv"
             valid_csv = "valid_data.csv"
 

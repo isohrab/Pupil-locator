@@ -1,13 +1,13 @@
 config = dict()
-config["batch_size"] = 64
+config["batch_size"] = 32
 config["total_steps"] = 400000
 config["validate_every"] = 4000
-config["validate_for"] = 500
+config["validate_for"] = 1300
 config["save_every"] = 3 * config["validate_every"]
 
 config["n_filters"] =    [16, 32, 128, 128, 256, 256]
-config["filter_sizes"] = [3, 3 , 3, 3 , 3 , 3]
-config["max_pool"] =     [1, 1 , 1, 1 , 1 , 1]
+config["filter_sizes"] = [3, 3  , 3  , 3  , 3  , 3]
+config["max_pool"] =     [1, 1  , 1  , 1  , 1  , 1]
 # check layer size >>    [96,48, 24,12, 6 , 3 ]
 config["fc_layers"] = [256, 128]
 # check layer size >>    [96, 48, 24, 12 , ]
@@ -28,8 +28,5 @@ config["output_dim"] = 4
 
 
 # TODO:
-# -1. check YOLO last layer pooling
-# 0. Check avgPooling on the last layer
-# 1. show image + labels on it
 # 2. Run a 3 layer network
 # 3. Use googLeNet transfer learning

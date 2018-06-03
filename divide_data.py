@@ -9,7 +9,7 @@ def process_data(original_path, portion):
     """
     process original data with respective labels, create a csv file include the image_path and its label
     :param original_path: path to the original data
-    :param portion: portion of train, valid, test set as array [0.75,0.2,0.05]
+    :param portion: portion of train, valid, test set as array [0.85,0.15]
     :return:
     """
     if not os.path.isdir(original_path):
@@ -63,18 +63,15 @@ def process_data(original_path, portion):
     # based portion values, make train, validation, test set
     data_len = len(data)
     train_len = int(np.ceil(data_len * portion[0]))
-    valid_len = int(np.round(data_len * portion[1]))
 
     train_data = data[:train_len]
-    valid_data = data[train_len:train_len+valid_len]
-    test_data = data[train_len+valid_len:]
+    valid_data = data[train_len:]
 
-    assert data_len == (len(train_data)+len(valid_data)+len(test_data))
+    assert data_len == (len(train_data)+len(valid_data))
 
     # save all lists to data/ folder
     saveCSV(train_data, "train_data.csv", "data/")
     saveCSV(valid_data, "valid_data.csv", "data/")
-    saveCSV(test_data, "test_data.csv", "data/")
 
 
 def saveCSV(data_list, output_name, save_path):
@@ -89,5 +86,5 @@ def saveCSV(data_list, output_name, save_path):
     print("{0} has been successfully saved on {1}".format(output_name, save_path))
 
 if __name__ == "__main__":
-    process_data("Original-data", [0.75, 0.2, 0.05])
+    process_data("Original-data", [0.9, 0.1])
     print("done...")

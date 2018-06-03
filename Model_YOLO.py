@@ -61,8 +61,8 @@ class Model(object):
                                  bias_initializer=tf.zeros_initializer())
             x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.99, epsilon=0.001, center=True,
                                               scale=True)
-            x = tf.nn.dropout(x, self.keep_prob)
-
+            # x = tf.nn.dropout(x, self.keep_prob)
+            x = tf.nn.leaky_relu(x, alpha=0.1, name="ReLu")
         return x
 
     def passthrough_layer(self, a, b, kernel, depth, size, train_logical, name):

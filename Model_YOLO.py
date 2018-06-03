@@ -58,7 +58,8 @@ class Model(object):
         with tf.variable_scope(name):
             x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
                                  use_bias=False,
-                                 kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
+                                 kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
+                                 kernel_regularizer=tf.contrib.layers.l2_regulizer(0.001))
             x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.99, epsilon=0.001, center=True,
                                               scale=True)
             # x = tf.nn.dropout(x, self.keep_prob)
@@ -216,6 +217,12 @@ class Model(object):
             # self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"]).minimize(self.loss,
             #                                                                         global_step=self.global_step)
             self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
+
+            # add l2 loss
+            reg_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_loss = tf.reduce_sum(reg_loss)
+            tf.summary.scalar('l2_loss', reg_loss)
+            self.loss = self.loss + reg_loss
             # Compute gradients of loss w.r.t. all trainable variables
             gradients = tf.gradients(self.loss, trainable_params)
 

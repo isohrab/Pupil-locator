@@ -1,6 +1,7 @@
 import tensorflow as tf
 import argparse
-from Pupil_locator_model import Model
+from Model_Simple import Model as SModel
+from Model_YOLO import Model as YModel
 from config import config
 from Batchizer import Batchizer
 from tqdm import tqdm
@@ -9,8 +10,14 @@ from Logger import Logger
 import numpy as np
 
 
-def create_model(session, model_name, logger):
-    model = Model(model_name, config, logger)
+def create_model(session, m_type, m_name, logger):
+    if m_type == "simple":
+        model = SModel(m_name, config, logger)
+    elif m_type == "YOLO":
+        model = YModel(m_name, config, logger)
+    else:
+        raise ValueError
+
     ckpt = tf.train.get_checkpoint_state(model.model_dir)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         logger.log('Reloading model parameters..')
@@ -42,23 +49,13 @@ def print_predictions(result, logger):
                                                                          pred[2],
                                                                          pred[3]))
 
-    # logger.log("########### Print  Predictions ################")
-    # logger.log("label: [\tx\t y")
-    # for r in result:
-    #     pred = r[0]
-    #     y = r[1]
-    #     logger.log("truth: {0:8.2f} {1:8.2f} ".format(y[0], y[1]))
-    #     logger.log("pred : {0:8.2f} {1:8.2f}\n".format(pred[0], pred[1]))
-    #
-    # logger.log("###############  End  ###################")
 
-
-def main(model_name, logger):
+def main(model_type, model_name, logger):
     with tf.Graph().as_default() as g:
         with tf.Session() as sess:
 
             # Create a new model or reload existing checkpoint
-            model = create_model(sess, model_name, logger)
+            model = create_model(sess, model_type, model_name, logger)
 
             # Create a log writer object
             log_writer = tf.summary.FileWriter(model.model_dir, graph=sess.graph)
@@ -67,6 +64,7 @@ def main(model_name, logger):
             epoch_loss = 0
 
             saver = tf.train.Saver(max_to_keep=3)
+            best_saver = tf.train.Saver(max_to_keep=1)
 
             root_path = "data/"
             train_csv = "train_data.csv"
@@ -125,6 +123,16 @@ def main(model_name, logger):
                                                                                               epoch_loss,
                                                                                               valid_loss))
 
+                # save a checkpoint with the best loss value
+                if valid_loss < logger.best_loss:
+                    logger.save_best_loss(valid_loss)
+                    best_path = os.path.join(model.model_dir, "best_loss/")
+                    check_dir(best_path)
+                    save_path = best_saver.save(sess, best_path, global_step=model.global_step)
+                    logger.log("model saved with best loss {0} at {1}".format(valid_loss,
+                                                                              save_path))
+
+
                 # save_every and validate_every should be dividable, otherwise this step will jump
                 if model.global_step.eval() % config["save_every"] == 0:
                     save_path = saver.save(sess, model.model_dir, global_step=model.global_step)
@@ -144,10 +152,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "test"
-    model_comment = "simple with X Y W H labels only. batch normalization + drop out, add l2 regularization." \
-                    " normalized input"
+    model_name = "YOLO_Half2"
+    model_type = "YOLO"
+    model_comment = "Half yolo without dropout but with Leaky Relu and XYWH labels"
 
-    logger = Logger(model_name, model_comment, config, logdir="models/" + model_name + "/")
+    logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")
-    main(model_name, logger)
+    main(model_type, model_name, logger)

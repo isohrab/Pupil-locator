@@ -57,8 +57,8 @@ class Model(object):
 
         with tf.variable_scope(name):
             x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
-                                 kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-                                 bias_initializer=tf.zeros_initializer())
+                                 use_bias=False,
+                                 kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
             x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.99, epsilon=0.001, center=True,
                                               scale=True)
             # x = tf.nn.dropout(x, self.keep_prob)

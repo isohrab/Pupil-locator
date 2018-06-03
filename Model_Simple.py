@@ -66,7 +66,8 @@ class Model(object):
                                                       epsilon=0.001,
                                                       center=True,
                                                       scale=True)
-            cnn_input = tf.layers.max_pooling2d(cnn_input, pool_size=2, strides=2)
+            if self.cfg["max_pool"][i] == 1:
+                cnn_input = tf.layers.max_pooling2d(cnn_input, pool_size=2, strides=2)
 
             # print what happen to layers! :)
             self.logger.log("layer {} conv2d: {}".format(i, cnn_input.get_shape()))
@@ -108,7 +109,7 @@ class Model(object):
         self.logits = tf.contrib.layers.fully_connected(a, self.cfg["output_dim"], activation_fn=None)
         # self.logits = tf.reshape(cnn_input, shape=(-1, self.cfg["output_dim"]))
 
-        self.loss = tf.losses.mean_squared_error(Y_norm,
+        self.loss = tf.losses.mean_squared_error(self.Y,
                                                  self.logits,
                                                  weights=[[3.0, 3.0, 1.0, 1.0]])
 

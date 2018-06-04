@@ -126,10 +126,8 @@ class Model(object):
             trainable_params = tf.trainable_variables()
             l2_loss = 0
             for var in trainable_params:
-                if var.name.find("weight") >= 0 or var.name.find("kernel") >= 0:
+                if var.name.find("weight") > 0 or var.name.find("kernel") > 0:
                     l2_loss += 0.01 * tf.nn.l2_loss(var)
-
-
 
             final_loss = self.loss + l2_loss
 

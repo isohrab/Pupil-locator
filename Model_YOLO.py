@@ -27,7 +27,6 @@ class Model(object):
         self.summary_op = tf.summary.merge_all()
 
     def init_placeholders(self):
-        # encoder inputs are include </s> tokens. e.g: "hello world </s>". So we can use them as decoder_output too.
         # shape: [Batch_size, Width, Height, Channels]
         self.X = tf.placeholder(dtype=tf.float32,
                                 shape=(None,
@@ -47,6 +46,8 @@ class Model(object):
 
         self.train_flag = tf.placeholder(dtype=tf.bool, name='flag_placeholder')
 
+        self.learning_rate = tf.placeholder(dtype=tf.float32, shape=(), name="learning_rate")
+
     def maxpool_layer(self, x, size, stride, name):
         with tf.name_scope(name):
             x = tf.layers.max_pooling2d(x, size, stride, padding='SAME')
@@ -58,11 +59,11 @@ class Model(object):
         with tf.variable_scope(name):
             x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
                                  use_bias=False,
-                                 kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d(),
-                                 kernel_regularizer=tf.contrib.layers.l2_regulizer(0.001))
-            x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.99, epsilon=0.001, center=True,
+                                 kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
+
+            x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.95, epsilon=0.001, center=True,
                                               scale=True)
-            # x = tf.nn.dropout(x, self.keep_prob)
+
             x = tf.nn.leaky_relu(x, alpha=0.1, name="ReLu")
         return x
 
@@ -191,10 +192,9 @@ class Model(object):
         # Logits
         self.logits = tf.reshape(x, shape=(-1, self.cfg["output_dim"]), name='y')
 
-        # Y_norm = self.Y / self.cfg["image_width"]
         self.loss = tf.losses.mean_squared_error(self.Y,
                                                  self.logits,
-                                                 weights=[[2.0, 2.0, 1.0, 1.0]])
+                                                 weights=[[3.0, 3.0, 1.0, 1.0]])
 
         # Training summary for the current batch_loss
         tf.summary.scalar('loss', self.loss)
@@ -208,23 +208,17 @@ class Model(object):
         with tf.control_dependencies(update_ops):
             trainable_params = tf.trainable_variables()
 
-            learning_rate = tf.train.exponential_decay(self.cfg["learning_rate"],
-                                                       self.global_step,
-                                                       self.cfg["decay_step"],
-                                                       self.cfg["decay_rate"],
-                                                       staircase=True)
-            # TODO: need to handle all optimization
-            # self.opt = tf.train.AdamOptimizer(learning_rate=self.cfg["learning_rate"]).minimize(self.loss,
-            #                                                                         global_step=self.global_step)
-            self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            self.opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
 
             # add l2 loss
-            reg_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-            reg_loss = tf.reduce_sum(reg_loss)
-            tf.summary.scalar('l2_loss', reg_loss)
-            self.loss = self.loss + reg_loss
+            l2_loss = 0
+            for var in trainable_params:
+                if var.name.find("weight") > 0 or var.name.find("kernel") > 0:
+                    l2_loss += 0.005 * tf.nn.l2_loss(var)
+
+            final_loss = self.loss + l2_loss
             # Compute gradients of loss w.r.t. all trainable variables
-            gradients = tf.gradients(self.loss, trainable_params)
+            gradients = tf.gradients(final_loss, trainable_params)
 
             # Clip gradients by a given maximum_gradient_norm
             clip_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
@@ -233,7 +227,7 @@ class Model(object):
             self.update = self.opt.apply_gradients(zip(clip_gradients, trainable_params),
                                                    global_step=self.global_step)
 
-    def train(self, sess, images, labels, keep_prob):
+    def train(self, sess, images, labels, keep_prob, lr):
         """Run a train step of the model feeding the given inputs.
         Args:
         session: tensorflow session to use.
@@ -251,7 +245,8 @@ class Model(object):
         input_feed = {self.X.name: images,
                       self.Y.name: labels,
                       self.keep_prob.name: keep_prob,
-                      self.train_flag.name: True}
+                      self.train_flag.name: True,
+                      self.learning_rate.name: lr}
 
         output_feed = [self.update,  # Update Op that does optimization
                        self.loss,  # Loss for current batch

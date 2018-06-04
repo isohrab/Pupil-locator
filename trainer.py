@@ -79,14 +79,18 @@ def main(model_type, model_name, logger):
             train_batches = train_batchizer.batches()
             valid_batches = valid_batchizer.batches()
 
+            # check if learning rate set correctly
+            assert int(config["total_steps"]/config["decay_step"]) == len(config["learning_rate"])
+
             while model.global_step.eval() < config["total_steps"]:
 
+                lr = config["learning_rate"][int(config["decay_step"]/config["total_steps"])]
                 with tqdm(total=config["validate_every"], unit="batches") as t:
                     for x, y, _ in train_batches:
                         if x is None:
                             continue
 
-                        batch_loss, summary = model.train(sess, x, y, config["keep_prob"])
+                        batch_loss, summary = model.train(sess, x, y, config["keep_prob"], lr)
                         t.set_description_str("batch_loss:{0:8.2f}".format(batch_loss))
                         epoch_loss += batch_loss
                         log_writer.add_summary(summary, model.global_step.eval())
@@ -132,17 +136,15 @@ def main(model_type, model_name, logger):
                     logger.log("model saved with best loss {0} at {1}".format(valid_loss,
                                                                               save_path))
 
-
                 # save_every and validate_every should be dividable, otherwise this step will jump
                 if model.global_step.eval() % config["save_every"] == 0:
                     save_path = saver.save(sess, model.model_dir, global_step=model.global_step)
                     logger.log("model saved at {}".format(save_path))
 
+                tf.summary.scalar('train_loss', epoch_loss)
+                tf.summary.scalar('valid_loss', valid_loss)
                 epoch_loss = 0
                 valid_loss = 0
-
-                # Increase the epoch index of the model
-                # model.global_epoch_step_op.eval()
 
             logger.log('Training is done.')
 
@@ -152,7 +154,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "YOLO_Half2"
+    model_name = "test3"
     model_type = "YOLO"
     model_comment = "Half yolo without dropout but with Leaky Relu and XYWH labels"
 

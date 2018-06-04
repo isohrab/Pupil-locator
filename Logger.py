@@ -89,7 +89,7 @@ class Logger(object):
     def __config_initializer(self, typ, name, comment):
         with open(self.cfg_path, mode='w') as f:
             f.write("run \t 0\n")
-            f.write("model_type \t {}]\n".format(typ))
+            f.write("model_type \t {}\n".format(typ))
             f.write("model_name \t {}\n".format(name))
             f.write("model_comment \t {}\n".format(comment))
             f.write("best_loss \t inf\n")

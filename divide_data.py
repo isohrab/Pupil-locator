@@ -1,7 +1,6 @@
 import os
 from random import shuffle
 from xml.etree import ElementTree
-import numpy as np
 import csv
 from utils import *
 

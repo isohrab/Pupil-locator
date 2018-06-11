@@ -8,6 +8,7 @@ from tqdm import tqdm
 from utils import *
 from Logger import Logger
 import numpy as np
+from augmentor import Augmentor
 
 
 def create_model(session, m_type, m_name, logger):
@@ -76,8 +77,10 @@ def main(model_type, model_name, logger):
             train_batchizer = Batchizer(train_path, config["batch_size"])
             valid_batchizer = Batchizer(valid_path, config["batch_size"])
 
-            train_batches = train_batchizer.batches()
-            valid_batches = valid_batchizer.batches()
+            # init augmentor
+            ag = Augmentor('noisy_videos/', config)
+            train_batches = train_batchizer.batches(ag)
+            valid_batches = valid_batchizer.batches(ag)
 
             # check if learning rate set correctly
             assert int(config["total_steps"]/config["decay_step"]) == len(config["learning_rate"])
@@ -91,6 +94,7 @@ def main(model_type, model_name, logger):
                             continue
 
                         batch_loss, summary = model.train(sess, x, y, config["keep_prob"], lr)
+
                         t.set_description_str("batch_loss:{0:8.2f}".format(batch_loss))
                         epoch_loss += batch_loss
                         log_writer.add_summary(summary, model.global_step.eval())
@@ -154,9 +158,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "test3"
+    model_name = "Y_noisy"
     model_type = "YOLO"
-    model_comment = "Half yolo without dropout but with Leaky Relu and XYWH labels"
+    model_comment = "Yolo with dropout but with Leaky Relu and XYWH 2211 labels, and float labels," \
+                    " with noisy image less noisy!"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")

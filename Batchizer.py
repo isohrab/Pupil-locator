@@ -2,6 +2,7 @@ import os
 from random import shuffle
 from PIL import Image
 import numpy as np
+import cv2
 
 
 class Batchizer(object):
@@ -30,7 +31,7 @@ class Batchizer(object):
 
         self.n_batches = int(np.ceil(len(self.data_list) / self.batch_size))
 
-    def batches(self):
+    def batches(self, ag):
         # before each epoch, shuffle data
         while True:
             shuffle(self.data_list)
@@ -39,11 +40,12 @@ class Batchizer(object):
             labels = []
             img_names = []
             for row in self.data_list:
-                image = Image.open(row[0], 'r')
-                # todo: add noise here
+                image = cv2.imread(row[0], cv2.IMREAD_GRAYSCALE)
                 label = np.asarray(row[1:5], dtype=np.float32)
-                images.append(np.expand_dims(np.array(image), -1))
-                labels.append(label)
+                # add noise to images and corresponding label
+                ag_img, ag_lbl = ag.addNoise(image, label)
+                images.append(np.expand_dims(np.array(ag_img), -1))
+                labels.append(ag_lbl)
                 img_names.append(row[0])
                 if len(images) == self.batch_size:
                     yield images, labels, img_names

@@ -30,18 +30,19 @@ class Augmentor(object):
             print("loading video {}".format(video))
             cap = cv2.VideoCapture(video)
             ret, frame = cap.read()
+            frame = frame[100:, 50:]
             frame = cv2.resize(frame, (192, 192))
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             self.frames.append(frame)
             while ret:
                 ret, frame = cap.read()
                 if ret:
+                    frame = frame[100:, 50:]
                     frame = cv2.resize(frame, (192, 192))
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     self.frames.append(frame)
 
             cap.release()
-            break # TODO: remove this
 
         print("In total {} frames loaded".format(len(self.frames)))
 
@@ -79,10 +80,10 @@ class Augmentor(object):
 
         # update the label based movement and scale
         update_label = label[:]
-        update_label[0] = round(label[0] * s) + cOffset
-        update_label[1] = round(label[1] * s) + rOffset
-        update_label[2] = round(label[2] * s)
-        update_label[3] = round(label[3] * s)
+        update_label[0] = label[0] * s + cOffset
+        update_label[1] = label[1] * s + rOffset
+        update_label[2] = label[2] * s
+        update_label[3] = label[3] * s
 
         return z, update_label
 
@@ -132,15 +133,15 @@ class Augmentor(object):
 
         w = int(in_label[2] * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
         h = int(in_label[3] * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
-        x = int(in_label[0] - (in_label[2] / 2) + ri(0, w))
-        y = int(in_label[1] - (in_label[3] / 2) + ri(0, h))
-        print(x, h, w, y)
+        x = min(max(0, int(in_label[0] - in_label[2] / 2) + ri(0, w)), int(192-w))
+        y = min(max(0, int(in_label[1] - in_label[3] / 2) + ri(0, h)), int(192-h))
 
         # create a occlusion matrix
-        o = np.random.randint(0, 255, size=(w, h), dtype=np.uint8)
+        o = np.ones((h, w), dtype=np.uint8) * 250
+
 
         # put occlusion inside the img
-        in_img[y:y + w, x:x + h] = o
+        in_img[y:y + h, x:x + w] = o
 
         return in_img
 

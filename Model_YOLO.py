@@ -57,6 +57,7 @@ class Model(object):
     def conv_layer(self, x, kernel, depth, train_logical, name):
 
         with tf.variable_scope(name):
+            x = tf.nn.dropout(x, keep_prob=self.keep_prob)
             x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
                                  use_bias=False,
                                  kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
@@ -81,109 +82,111 @@ class Model(object):
         x = self.X
         self.logger.log("input shape: {}".format(x.get_shape()))
 
+        i = 2
+
         # block 1
-        x = self.conv_layer(x, (3, 3), 16, self.train_flag, 'conv1')
+        x = self.conv_layer(x, (3, 3), i*16, self.train_flag, 'conv1')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
         x = self.maxpool_layer(x, (2, 2), (2, 2), 'maxpool1')
         self.logger.log("maxpool {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 32, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (3, 3), i*32, self.train_flag, 'conv2')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
         x = self.maxpool_layer(x, (2, 2), (2, 2), 'maxpool2')
         self.logger.log("maxpool {}: {}".format(2, x.get_shape()))
 
         # block 2
-        x = self.conv_layer(x, (3, 3), 64, self.train_flag, 'conv3')
+        x = self.conv_layer(x, (3, 3), i*64, self.train_flag, 'conv3')
         self.logger.log("conv {}: {}".format(3, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 32, self.train_flag, 'conv4')
+        x = self.conv_layer(x, (1, 1), i*32, self.train_flag, 'conv4')
         self.logger.log("conv {}: {}".format(4, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 64, self.train_flag, 'conv5')
+        x = self.conv_layer(x, (3, 3), i*64, self.train_flag, 'conv5')
         self.logger.log("conv {}: {}".format(5, x.get_shape()))
 
         x = self.maxpool_layer(x, (2, 2), (2, 2), 'maxpool5')
         self.logger.log("maxpool {}: {}".format(5, x.get_shape()))
 
         # block 3
-        x = self.conv_layer(x, (3, 3), 128, self.train_flag, 'conv6')
+        x = self.conv_layer(x, (3, 3), i*128, self.train_flag, 'conv6')
         self.logger.log("conv {}: {}".format(6, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 64, self.train_flag, 'conv7')
+        x = self.conv_layer(x, (1, 1), i*64, self.train_flag, 'conv7')
         self.logger.log("conv {}: {}".format(7, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 128, self.train_flag, 'conv8')
+        x = self.conv_layer(x, (3, 3), i*128, self.train_flag, 'conv8')
         self.logger.log("conv {}: {}".format(8, x.get_shape()))
 
         x = self.maxpool_layer(x, (2, 2), (2, 2), 'maxpool8')
         self.logger.log("maxpool {}: {}".format(8, x.get_shape()))
 
         # block 4
-        x = self.conv_layer(x, (3, 3), 256, self.train_flag, 'conv9')
+        x = self.conv_layer(x, (3, 3), i*256, self.train_flag, 'conv9')
         self.logger.log("conv {}: {}".format(9, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 128, self.train_flag, 'conv10')
+        x = self.conv_layer(x, (1, 1), i*128, self.train_flag, 'conv10')
         self.logger.log("conv {}: {}".format(10, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 256, self.train_flag, 'conv11')
+        x = self.conv_layer(x, (3, 3), i*256, self.train_flag, 'conv11')
         self.logger.log("conv {}: {}".format(11, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 128, self.train_flag, 'conv12')
+        x = self.conv_layer(x, (1, 1), i*128, self.train_flag, 'conv12')
         self.logger.log("conv {}: {}".format(12, x.get_shape()))
 
-        passthrough = self.conv_layer(x, (3, 3), 256, self.train_flag, 'conv13')
+        passthrough = self.conv_layer(x, (3, 3), i*256, self.train_flag, 'conv13')
         self.logger.log("conv {}: {}".format(13, x.get_shape()))
 
         x = self.maxpool_layer(passthrough, (2, 2), (2, 2), 'maxpool13')
         self.logger.log("maxpool {}: {}".format(13, x.get_shape()))
 
         # block 5
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv14')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv14')
         self.logger.log("conv {}: {}".format(14, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 256, self.train_flag, 'conv15')
+        x = self.conv_layer(x, (1, 1), i*256, self.train_flag, 'conv15')
         self.logger.log("conv {}: {}".format(15, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 521, self.train_flag, 'conv16')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv16')
         self.logger.log("conv {}: {}".format(16, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 256, self.train_flag, 'conv17')
+        x = self.conv_layer(x, (1, 1), i*256, self.train_flag, 'conv17')
         self.logger.log("conv {}: {}".format(17, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv18')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv18')
         self.logger.log("conv {}: {}".format(18, x.get_shape()))
 
         # block 6
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv19')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv19')
         self.logger.log("conv {}: {}".format(19, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv20')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv20')
         self.logger.log("conv {}: {}".format(20, x.get_shape()))
 
-        x = self.passthrough_layer(x, passthrough, (3, 3), 32, 2, self.train_flag, 'conv21')
+        x = self.passthrough_layer(x, passthrough, (3, 3), i*32, 2, self.train_flag, 'conv21')
         self.logger.log("conv {}: {}".format(21, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv22')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv22')
         self.logger.log("conv {}: {}".format(22, x.get_shape()))
 
         x = self.maxpool_layer(x, (2, 2), (2, 2), 'maxpool22')
         self.logger.log("maxpool {}: {}".format(22, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv23')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv23')
         self.logger.log("conv {}: {}".format(23, x.get_shape()))
 
         x = self.maxpool_layer(x, (2, 2), (2, 2), 'maxpool23')
         self.logger.log("maxpool {}: {}".format(23, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv24')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv24')
         self.logger.log("conv {}: {}".format(24, x.get_shape()))
 
         x = self.maxpool_layer(x, (2, 2), (2, 2), 'maxpool24')
         self.logger.log("maxpool {}: {}".format(24, x.get_shape()))
 
-        x = self.conv_layer(x, (3, 3), 512, self.train_flag, 'conv26')
+        x = self.conv_layer(x, (3, 3), i*512, self.train_flag, 'conv26')
         self.logger.log("conv {}: {}".format(26, x.get_shape()))
 
         x = self.conv_layer(x, (1, 1), self.cfg["output_dim"], self.train_flag, 'conv27')
@@ -194,7 +197,7 @@ class Model(object):
 
         self.loss = tf.losses.mean_squared_error(self.Y,
                                                  self.logits,
-                                                 weights=[[3.0, 3.0, 1.0, 1.0]])
+                                                 weights=[[2.0, 2.0, 1.0, 1.0]])
 
         # Training summary for the current batch_loss
         tf.summary.scalar('loss', self.loss)

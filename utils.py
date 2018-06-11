@@ -14,6 +14,8 @@ def rf(low, high):
     :param high: higher bound (excluded)
     :return: a float number between [low, high)
     """
+    if low >= high:
+        return low
     return np.random.uniform(low, high)
 
 
@@ -24,6 +26,8 @@ def ri(low, high):
     :param high: higher bound (excluded)
     :return: an int number between [low, high)
     """
+    if low >= high:
+        return low
     return np.random.randint(low, high)
 
 def anotator(img, label):

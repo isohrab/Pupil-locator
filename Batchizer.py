@@ -41,7 +41,7 @@ class Batchizer(object):
             img_names = []
             for row in self.data_list:
                 image = cv2.imread(row[0], cv2.IMREAD_GRAYSCALE)
-                label = np.asarray(row[1:5], dtype=np.float32)
+                label = np.asarray(row[1:], dtype=np.float32)
                 # add noise to images and corresponding label
                 ag_img, ag_lbl = ag.addNoise(image, label)
                 images.append(np.expand_dims(np.array(ag_img), -1))

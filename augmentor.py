@@ -1,10 +1,11 @@
-from utils import *
-
+from utils import rf, ri, anotator
+import os
 import numpy as np
 from PIL import Image
 from config import config
 from xml.etree import ElementTree
-import time
+import cv2
+
 
 class Augmentor(object):
     """
@@ -133,12 +134,11 @@ class Augmentor(object):
 
         w = int(in_label[2] * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
         h = int(in_label[3] * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
-        x = min(max(0, int(in_label[0] - in_label[2] / 2) + ri(0, w)), int(192-w))
-        y = min(max(0, int(in_label[1] - in_label[3] / 2) + ri(0, h)), int(192-h))
+        x = min(max(0, int(in_label[0] - in_label[2] / 2) + ri(0, w)), int(192 - w))
+        y = min(max(0, int(in_label[1] - in_label[3] / 2) + ri(0, h)), int(192 - h))
 
         # create a occlusion matrix
         o = np.ones((h, w), dtype=np.uint8) * 250
-
 
         # put occlusion inside the img
         in_img[y:y + h, x:x + w] = o
@@ -156,7 +156,6 @@ class Augmentor(object):
         c_img = np.array(in_img, copy=True)
         c_label = np.array(in_label, copy=True)
 
-
         # apply noise
         c_img, c_label = self.downscale(c_img, c_label)
         c_img = self.addReflection(c_img)
@@ -165,7 +164,6 @@ class Augmentor(object):
         return c_img, c_label
 
 
-#
 if __name__ == "__main__":
     image_fn = "0in.jpg"
     img = cv2.imread(image_fn, 0)

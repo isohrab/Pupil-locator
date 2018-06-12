@@ -62,8 +62,7 @@ class Model(object):
                                  use_bias=False,
                                  kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
-            x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.95, epsilon=0.001, center=True,
-                                              scale=True)
+            x = tf.layers.batch_normalization(x, training=train_logical)
 
             x = tf.nn.leaky_relu(x, alpha=0.1, name="ReLu")
         return x
@@ -197,14 +196,14 @@ class Model(object):
                              name="conv27")
 
         x = tf.nn.leaky_relu(x, alpha=0.1, name="ReLu")
-        self.logger.log("conv {}: {}".format(23, x.get_shape()))
+        self.logger.log("conv {}: {}".format("Logits", x.get_shape()))
 
         # Logits
         self.logits = tf.reshape(x, shape=(-1, self.cfg["output_dim"]), name='y')
 
         self.loss = tf.losses.mean_squared_error(self.Y,
                                                  self.logits,
-                                                 weights=[[2.0, 2.0, 1.0, 1.0]])
+                                                 weights=[[2.0, 2.0, 1.0, 1.0, 1.0]])
 
         # Training summary for the current batch_loss
         tf.summary.scalar('loss', self.loss)

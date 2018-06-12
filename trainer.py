@@ -33,7 +33,7 @@ def create_model(session, m_type, m_name, logger):
 
 def print_predictions(result, logger):
     logger.log("########### Print  Predictions ################")
-    logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t")
+    logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t \a")
     for r in result:
 
         y = r[0]
@@ -41,14 +41,16 @@ def print_predictions(result, logger):
         img_path = r[2]
 
         logger.log("Path: " + img_path)
-        logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f}".format(y[0],
+        logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}".format(y[0],
                                                                        y[1],
                                                                        y[2],
-                                                                       y[3]))
-        logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f}\n".format(pred[0],
+                                                                       y[3],
+                                                                       y[4]))
+        logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f}\n".format(pred[0],
                                                                          pred[1],
                                                                          pred[2],
-                                                                         pred[3]))
+                                                                         pred[3],
+                                                                         pred[4]))
 
 
 def main(model_type, model_name, logger):
@@ -158,9 +160,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "Y_noisy"
+    model_name = "test"
     model_type = "YOLO"
-    model_comment = "Yolo with dropout but with Leaky Relu and XYWH 2211 labels, and float labels," \
+    model_comment = "Yolo half half with dropout but with Leaky Relu and all labels, and float labels," \
                     " with noisy image less noisy!"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")

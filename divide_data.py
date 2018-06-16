@@ -49,11 +49,11 @@ def process_data(original_path, portion):
     for i, img in enumerate(images_list):
         xml_path = labels_list[i]
         e = ElementTree.parse(xml_path).getroot()
-        x = np.round(np.float32(e[0].text))
-        y = np.round(np.float32(e[1].text))
-        w = np.round(np.float32(e[2].text))
-        h = np.round(np.float32(e[3].text))
-        a = np.round(np.float32(e[4].text))
+        x = np.float32(e[0].text)
+        y = np.float32(e[1].text)
+        w = np.float32(e[2].text)
+        h = np.float32(e[3].text)
+        a = np.float32(e[4].text)
         data.append([img, x, y, w, h, a])
 
     # shuffle data

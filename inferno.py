@@ -55,10 +55,10 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
         ret = True
         counter = 0
         tic = time.time()
+        frames = []
+        preds = []
+        # exponential weight decay
 
-        # prepare a video write to show the result
-        if write_output:
-            video = cv2.VideoWriter("predicted_video.avi", cv2.VideoWriter_fourcc(*"XVID"), 1, (192, 192))
 
         while ret:
             ret, frame = cap.read()
@@ -69,22 +69,30 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
                     frame = cv2.resize(frame, (192, 192))
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 image = np.expand_dims(gray, -1)
-                pred_label = model.predict(sess, [image])
-                print(pred_label)
-                labeled_img = anotator(gray, pred_label[0])
-                video.write(labeled_img)
+                p = model.predict(sess, [image])
+                preds.append(p[0])
+                frames.append(gray)
                 counter += 1
-                # Display the resulting frame
-                cv2.imshow('frame', labeled_img)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+
         toc = time.time()
         print("{0:0.2f} FPS".format(counter / (toc - tic)))
 
+    # prepare a video write to show the result
+    beta = np.ones((config["output_dim"]), dtype=np.float32) * 0.95
+    loc = np.ones((config["output_dim"]), dtype=np.float32)
+    if write_output:
+        video = cv2.VideoWriter("predicted_video.avi", cv2.VideoWriter_fourcc(*"XVID"), 10, (192, 192))
+
+        for i, img in enumerate(frames):
+            loc = beta * loc + (1-beta) * preds[i]
+            if (i+1) % 6 == 0:
+                labeled_img = anotator(img, loc)
+                video.write(labeled_img)
+
         # close the video
-        if write_output:
-            cv2.destroyAllWindows()
-            video.release()
+        cv2.destroyAllWindows()
+        video.release()
+    print("Done...")
 
 
 if __name__ == "__main__":
@@ -107,7 +115,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "YOLO_Half2"
+    model_name = "YHN_XYW"
     model_type = args.model_type
     video_input = args.video_input
 
@@ -117,5 +125,5 @@ if __name__ == "__main__":
     # create a dummy video
     # ag = Augmentor('noisy_videos', config)
     # video_input = create_noisy_video(length=60, fps=5, augmentor=ag)
-    video_input = "test_videos/4.mp4"
+    video_input = "test_videos/5.mp4"
     main(model_type, model_name, logger, video_input)

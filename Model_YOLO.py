@@ -57,7 +57,7 @@ class Model(object):
     def conv_layer(self, x, kernel, depth, train_logical, name):
 
         with tf.variable_scope(name):
-            x = tf.nn.dropout(x, keep_prob=self.keep_prob)
+            # x = tf.nn.dropout(x, keep_prob=self.keep_prob)
             x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
                                  use_bias=False,
                                  kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
@@ -80,7 +80,7 @@ class Model(object):
         x = self.X
         self.logger.log("input shape: {}".format(x.get_shape()))
 
-        i = 2
+        i = 1
 
         # block 1
         x = self.conv_layer(x, (3, 3), i * 16, self.train_flag, 'conv1')
@@ -203,7 +203,7 @@ class Model(object):
 
         self.loss = tf.losses.mean_squared_error(self.Y,
                                                  self.logits,
-                                                 weights=[[2.0, 2.0, 1.0, 1.0, 1.0]])
+                                                 weights=[self.cfg["output_weights"][0:self.cfg["output_dim"]]])
 
         # Training summary for the current batch_loss
         tf.summary.scalar('loss', self.loss)

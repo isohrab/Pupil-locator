@@ -46,18 +46,27 @@ def anotator(img, label):
     rgb[:, :, 1] = img
     rgb[:, :, 2] = img
 
-    l1xs = int(label[0] - label[2] / 2)
-    l1ys = int(label[1])
-    l1xe = int(label[0] + label[2] / 2)
-    l1ye = int(label[1])
+    # l1xs = int(label[0] - label[2] / 2)
+    # l1ys = int(label[1])
+    # l1xe = int(label[0] + label[2] / 2)
+    # l1ye = int(label[1])
+    #
+    # l2xs = int(label[0])
+    # l2ys = int(label[1] - label[3] / 2)
+    # l2xe = int(label[0])
+    # l2ye = int(label[1] + label[3] / 2)
+    #
+    # rgb = cv2.line(rgb, (l1xs, l1ys), (l1xe, l1ye), (255, 255, 0), 1)
+    # rgb = cv2.line(rgb, (l2xs, l2ys), (l2xe, l2ye), (255, 255, 0), 1)
 
-    l2xs = int(label[0])
-    l2ys = int(label[1] - label[3] / 2)
-    l2xe = int(label[0])
-    l2ye = int(label[1] + label[3] / 2)
-
-    rgb = cv2.line(rgb, (l1xs, l1ys), (l1xe, l1ye), (255, 255, 0), 1)
-    rgb = cv2.line(rgb, (l2xs, l2ys), (l2xe, l2ye), (255, 255, 0), 1)
+    # draw ellipse
+    x = label[0]
+    y = label[1]
+    w = label[2]
+    h = label[2]
+    a = 0
+    color = (0, 250, 250)
+    rgb = cv2.ellipse(rgb, ((x, y), (w, h), a), color, 1)
 
     return rgb
 
@@ -102,7 +111,8 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
         y = float(i[2])
         w = float(i[3])
         h = float(i[4])
-        label = [x, y, w, h]
+        a = float(i[5])
+        label = [x, y, w, h, a]
         if augmentor is not None:
             img, label = augmentor.addNoise(img, label)
             img = np.asarray(img, dtype=np.uint8)

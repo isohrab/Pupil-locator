@@ -129,19 +129,37 @@ class Augmentor(object):
         :param in_label: just use pupil location
         :return: erased image
         """
-        if self.cfg["prob_occlusion"] < rf(0, 1):
-            return in_img
+        # if self.cfg["prob_occlusion"] < rf(0, 1):
+        #     return in_img
 
-        w = int(in_label[2] * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
-        h = int(in_label[3] * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
-        x = min(max(0, int(in_label[0] - in_label[2] / 2) + ri(0, w)), int(192 - w))
-        y = min(max(0, int(in_label[1] - in_label[3] / 2) + ri(0, h)), int(192 - h))
+        # randomly choose # object on the eye
+        num_obj = ri(0, self.cfg["occlusion_max_obj"])
 
-        # create a occlusion matrix
-        o = np.ones((h, w), dtype=np.uint8) * 250
+        # shorthand the w h
+        p_x = int(in_label[0])
+        p_y = int(in_label[1])
+        p_w = int(in_label[2] * 1.5)
+        p_h = int(in_label[3] * 1.5)
 
-        # put occlusion inside the img
-        in_img[y:y + h, x:x + w] = o
+        # choose a random size of the object
+        obj_w = int(p_w * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
+        obj_h = int(p_h * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
+        print(obj_w, obj_h)
+
+        # choose a random location around the pupil
+        x_area = np.clip(p_x - p_w + ri(0, p_w), 0, self.cfg["image_width"])
+        y_area = np.clip(p_y - p_h + ri(0, p_h), 0, self.cfg["image_height"])
+
+        occ_color = ri(245, 256)
+        for i in range(num_obj):
+            obj_x = np.clip(x_area + ri(0, obj_w * 2), 0, self.cfg["image_width"]-obj_w)
+            obj_y = np.clip(y_area + ri(0, obj_h * 2), 0, self.cfg["image_height"]-obj_h)
+
+            # create a occlusion matrix
+            o = np.ones((obj_h, obj_w), dtype=np.uint8) * occ_color
+
+            # put occlusion inside the img
+            in_img[obj_y:obj_y + obj_h, obj_x:obj_x + obj_w] = o
 
         return in_img
 
@@ -159,8 +177,8 @@ class Augmentor(object):
         # apply noise
         c_img, c_label = self.downscale(c_img, c_label)
         c_img = self.addReflection(c_img)
-        c_img = self.addBlur(c_img)
         c_img = self.addOcclusion(c_img, c_label)
+        c_img = self.addBlur(c_img)
         return c_img, c_label
 
 

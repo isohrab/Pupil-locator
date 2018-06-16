@@ -206,7 +206,8 @@ class Model(object):
         self.mode = 'test'
         # Input feeds for dropout
         input_feed = {self.X.name: images,
-                      self.keep_prob.name: 1.0}
+                      self.keep_prob.name: 1.0,
+                      self.train_flag: False}
 
         output_feed = [self.logits]
         outputs = sess.run(output_feed, input_feed)

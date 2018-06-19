@@ -45,6 +45,8 @@ class Model(object):
                                         name="keep_prob")
         self.train_flag = tf.placeholder(dtype=tf.bool, name='flag_placeholder')
 
+        self.learning_rate = tf.placeholder(dtype=tf.float32, shape=(), name="learning_rate")
+
 
     def init_layers(self):
         cnn_input = self.X
@@ -111,7 +113,7 @@ class Model(object):
 
         self.loss = tf.losses.mean_squared_error(self.Y,
                                                  self.logits,
-                                                 weights=[[3.0, 3.0, 1.0, 1.0]])
+                                                 weights=[self.cfg["output_weights"][0:self.cfg["output_dim"]]])
 
         # Training summary for the current batch_loss
         tf.summary.scalar('loss', self.loss)

@@ -2,6 +2,8 @@ import tensorflow as tf
 import argparse
 from Model_Simple import Model as SModel
 from Model_YOLO import Model as YModel
+from Model_GAP import Model as GModel
+from Model_NASNET import Model as NModel
 from config import config
 from Batchizer import Batchizer
 from tqdm import tqdm
@@ -16,6 +18,10 @@ def create_model(session, m_type, m_name, logger):
         model = SModel(m_name, config, logger)
     elif m_type == "YOLO":
         model = YModel(m_name, config, logger)
+    elif m_type == 'GAP':
+        model = GModel(m_name, config, logger)
+    elif m_type == 'NAS':
+        model = NModel(m_name, config, logger)
     else:
         raise ValueError
 
@@ -76,11 +82,11 @@ def main(model_type, model_name, logger):
 
             # init augmentor
             ag = Augmentor('noisy_videos/', config)
-            train_batches = train_batchizer.batches(ag, config["output_dim"])
-            valid_batches = valid_batchizer.batches(ag, config["output_dim"])
+            train_batches = train_batchizer.batches(ag, config["output_dim"], num_c=3)
+            valid_batches = valid_batchizer.batches(ag, config["output_dim"], num_c=3)
 
             # check if learning rate set correctly
-            assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
+            # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
 
             while model.global_step.eval() < config["total_steps"]:
 
@@ -163,9 +169,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "test_summary"
-    model_type = "YOLO"
-    model_comment = "Yolo No dropout but with Leaky Relu and all labels, and float labels," \
+    model_name = "NAS_test"
+    model_type = "NAS"
+    model_comment = "GAP No dropout but with Leaky Relu and XYW, and float labels," \
                     " with noisy image less noisy!"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")

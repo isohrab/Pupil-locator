@@ -31,7 +31,7 @@ class Batchizer(object):
 
         self.n_batches = int(np.ceil(len(self.data_list) / self.batch_size))
 
-    def batches(self, ag, lbl_len=4):
+    def batches(self, ag, lbl_len=4, num_c=1):
         # before each epoch, shuffle data
         while True:
             shuffle(self.data_list)
@@ -44,7 +44,15 @@ class Batchizer(object):
                 label = np.asarray(row[1:], dtype=np.float32)
                 # add noise to images and corresponding label
                 ag_img, ag_lbl = ag.addNoise(image, label)
-                images.append(np.expand_dims(np.array(ag_img), -1))
+                if num_c == 3:
+                    ag_img = ag_img / 255
+                    w, h = ag_img.shape
+                    ag_img = np.tile(ag_img, (3, 1))
+                    ag_img = np.reshape(ag_img, (w, h, 3))
+                else:
+                    ag_img = np.expand_dims(ag_img, -1)
+
+                images.append(ag_img)
                 labels.append(ag_lbl[0:lbl_len])
                 img_names.append(row[0])
                 if len(images) == self.batch_size:

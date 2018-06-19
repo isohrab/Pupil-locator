@@ -48,8 +48,9 @@ config["occlusion_max_obj"] = 6
 
 
 # TODO:
-# 2. Run a 3 layer network
 # 3. Use googLeNet transfer learning
-# split learning rate in x step (polynomial decay)
-# avgPooling in the last layer!
+# split learning rate in x step (polynomial decay) Done,
+# avgPooling in the last layer! Done.
+
+# YOLO + GAP
 #

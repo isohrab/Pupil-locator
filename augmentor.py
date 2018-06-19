@@ -144,7 +144,6 @@ class Augmentor(object):
         # choose a random size of the object
         obj_w = int(p_w * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
         obj_h = int(p_h * rf(self.cfg["min_occlusion"], self.cfg["max_occlusion"]))
-        print(obj_w, obj_h)
 
         # choose a random location around the pupil
         x_area = np.clip(p_x - p_w + ri(0, p_w), 0, self.cfg["image_width"])

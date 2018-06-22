@@ -128,3 +128,23 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
     video.release()
 
     return output_fn
+
+
+def change_channel(frame, num_channel=1):
+    """
+    Get frame and normalize values between 0 and 1 and then based num channel reshape it to desired channel
+    :param frame: the input image, a numpy array
+    :param num_channel: desired number of channel
+    :return: normalized frame with num_channel
+    """
+    img = frame / 255
+    if num_channel == 3:
+        w, h = img.shape
+        img = np.tile(img, (3, 1))
+        img = np.reshape(img, (w, h, 3))
+    elif num_channel == 1:
+        img = np.expand_dims(img, -1)
+    else:
+        raise ValueError("Are you sure?")
+
+    return img

@@ -30,7 +30,7 @@ class Model(object):
                                 shape=(None,
                                        self.cfg["image_width"],
                                        self.cfg["image_height"],
-                                       3),
+                                       self.cfg["image_channel"]),
                                 name="images_input")
 
 
@@ -51,8 +51,9 @@ class Model(object):
     def train_nas(self):
         module = hub.Module("https://tfhub.dev/google/imagenet/mobilenet_v2_100_192/feature_vector/1",
                             trainable=True,
-                            tags={"train"},
                             name="NASNET")
+
+
 
         a = module(self.X)
         h_prev = a.get_shape().as_list()[1]

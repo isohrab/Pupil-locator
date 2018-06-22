@@ -47,44 +47,99 @@ class Model(object):
 
         self.learning_rate = tf.placeholder(dtype=tf.float32, shape=(), name="learning_rate")
 
+    def maxpool_layer(self, x, size, stride, name):
+        with tf.name_scope(name):
+            x = tf.layers.max_pooling2d(x, size, stride, padding='SAME')
+
+        return x
+
+    def conv_layer(self, x, kernel, depth, train_logical, name):
+
+        with tf.variable_scope(name):
+            # x = tf.nn.dropout(x, keep_prob=self.keep_prob)
+            x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
+                                 use_bias=False,
+                                 kernel_initializer=tf.contrib.layers.xavier_initializer_conv2d())
+
+            x = tf.layers.batch_normalization(x, training=train_logical)
+
+            x = tf.nn.leaky_relu(x, alpha=0.1, name="ReLu")
+        return x
 
     def train_nas(self):
         module = hub.Module("https://tfhub.dev/google/imagenet/mobilenet_v2_100_192/feature_vector/1",
                             trainable=True,
                             name="NASNET")
 
-
-
         a = module(self.X)
-        h_prev = a.get_shape().as_list()[1]
-        layers = [512, 128]
-        for i, h in enumerate(layers):
-            # by using fully_connected, tf will take care of X*W+b
-            with tf.name_scope("fc_layer" + str(i)):
-                with tf.name_scope("weight_" + str(i)):
-                    initial_value = tf.truncated_normal([h_prev, h], stddev=0.001)
-                    w = tf.Variable(initial_value, name="fc_w_" + str(i))
-                    self.variable_summaries(w)
 
-                with tf.name_scope("bias_" + str(i)):
-                    b = tf.Variable(tf.zeros([h]), name='fc_b_' + str(i))
-                    self.variable_summaries(b)
+        b, h = a.get_shape().as_list()[-1]
+        x = tf.reshape(a, (b, 1, 1, h))
 
-                with tf.name_scope("Wx_plus_b_" + str(i)):
-                    z = tf.matmul(a, w) + b
+        x = self.conv_layer(x, (1, 1), 1024, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-                with tf.name_scope("Batch_norm_" + str(i)):
-                    z_bn = tf.layers.batch_normalization(z,
-                                                         momentum=0.95,
-                                                         epsilon=1e-5,
-                                                         training=self.train_flag)
-                with tf.name_scope("L_ReLu_" + str(i)):
-                    a = tf.nn.leaky_relu(z_bn)
+        x = self.conv_layer(x, (1, 1), 1024, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-            h_prev = h
-            self.logger.log("layer {} fully connected: {}".format(i, a.get_shape()))
+        x = self.conv_layer(x, (1, 1), 512, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        self.logits = tf.contrib.layers.fully_connected(a, self.cfg["output_dim"], activation_fn=None)
+        x = self.conv_layer(x, (1, 1), 512, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+        x = self.conv_layer(x, (1, 1), 256, self.train_flag, 'conv1')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+        x = self.conv_layer(x, (1, 1), 128, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+        x = self.conv_layer(x, (1, 1), 64, self.train_flag, 'conv1')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+        x = self.conv_layer(x, (1, 1), 32, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+        x = self.conv_layer(x, (1, 1), 16, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+        x = self.conv_layer(x, (1, 1), 8, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+        self.logits = self.conv_layer(x, (1, 1), 4, self.train_flag, 'conv2')
+        self.logger.log("conv {}: {}".format(1, x.get_shape()))
+
+
+
+        # h_prev = a.get_shape().as_list()[1]
+        # layers = [512, 128]
+        # for i, h in enumerate(layers):
+        #     # by using fully_connected, tf will take care of X*W+b
+        #     with tf.name_scope("fc_layer" + str(i)):
+        #         with tf.name_scope("weight_" + str(i)):
+        #             initial_value = tf.truncated_normal([h_prev, h], stddev=0.001)
+        #             w = tf.Variable(initial_value, name="fc_w_" + str(i))
+        #             self.variable_summaries(w)
+        #
+        #         with tf.name_scope("bias_" + str(i)):
+        #             b = tf.Variable(tf.zeros([h]), name='fc_b_' + str(i))
+        #             self.variable_summaries(b)
+        #
+        #         with tf.name_scope("Wx_plus_b_" + str(i)):
+        #             z = tf.matmul(a, w) + b
+        #
+        #         with tf.name_scope("Batch_norm_" + str(i)):
+        #             z_bn = tf.layers.batch_normalization(z,
+        #                                                  momentum=0.95,
+        #                                                  epsilon=1e-5,
+        #                                                  training=self.train_flag)
+        #         with tf.name_scope("L_ReLu_" + str(i)):
+        #             a = tf.nn.leaky_relu(z_bn)
+        #
+        #     h_prev = h
+        #     self.logger.log("layer {} fully connected: {}".format(i, a.get_shape()))
+
+        # self.logits = tf.contrib.layers.fully_connected(a, self.cfg["output_dim"], activation_fn=None)
 
         self.loss = tf.losses.mean_squared_error(self.Y, self.logits)
 

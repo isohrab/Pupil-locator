@@ -171,10 +171,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "NAS_T"
+    model_name = "NAS_Conv_F"
     model_type = "NAS"
-    model_comment = "GAP No dropout but with Leaky Relu and XYW, and float labels," \
-                    " with noisy image less noisy!"
+    model_comment = "NAS False with conv 1024, 1024, 512, 512, 256,... 3"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")

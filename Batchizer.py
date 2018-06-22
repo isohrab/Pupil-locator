@@ -1,7 +1,7 @@
 import os
 from random import shuffle
-from PIL import Image
 import numpy as np
+from utils import change_channel
 import cv2
 
 
@@ -44,14 +44,8 @@ class Batchizer(object):
                 label = np.asarray(row[1:], dtype=np.float32)
                 # add noise to images and corresponding label
                 ag_img, ag_lbl = ag.addNoise(image, label)
-                if num_c == 3:
-                    ag_img = ag_img / 255
-                    w, h = ag_img.shape
-                    ag_img = np.tile(ag_img, (3, 1))
-                    ag_img = np.reshape(ag_img, (w, h, 3))
-                else:
-                    ag_img = np.expand_dims(ag_img, -1)
-
+                # normalize and change to desired num_channel
+                ag_img = change_channel(ag_img, num_c)
                 images.append(ag_img)
                 labels.append(ag_lbl[0:lbl_len])
                 img_names.append(row[0])

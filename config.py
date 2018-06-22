@@ -21,7 +21,7 @@ config["MAX_GRADIANT_NORM"] = 5.0
 # input info
 config["image_width"] = 192
 config["image_height"] = 192
-config["image_channel"] = 1
+config["image_channel"] = 3
 # Output shape
 config["output_dim"] = 3
 config["output_weights"] = [2.0, 2.0, 1.0, 1.0, 0.5]

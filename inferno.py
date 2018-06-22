@@ -5,11 +5,12 @@ import argparse
 import cv2
 import numpy as np
 from config import config
-from utils import anotator, create_noisy_video
+from utils import anotator, change_channel, create_noisy_video
 from Logger import Logger
 from Model_YOLO import Model as YModel
 from Model_Simple import Model as SModel
 from Model_GAP import Model as GModel
+from Model_NASNET import Model as NModel
 from augmentor import Augmentor
 
 
@@ -29,6 +30,8 @@ def load_model(session, m_type, m_name, logger):
         model = YModel(m_name, config, logger)
     elif m_type == "GAP":
         model = GModel(m_name, config, logger)
+    elif m_type == "NAS":
+        model = NModel(m_name, config, logger)
     else:
         raise ValueError
 
@@ -71,7 +74,7 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
                 if frame.shape[0] != 192:
                     frame = cv2.resize(frame, (192, 192))
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                image = np.expand_dims(gray, -1)
+                image = change_channel(gray, config["image_channel"])
                 p = model.predict(sess, [image])
                 preds.append(p[0])
                 frames.append(gray)
@@ -81,16 +84,16 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
         print("{0:0.2f} FPS".format(counter / (toc - tic)))
 
     # prepare a video write to show the result
-    beta = np.ones((config["output_dim"]), dtype=np.float32) * 0.9
+    beta = np.ones((config["output_dim"]), dtype=np.float32) * 0.0
     loc = np.ones((config["output_dim"]), dtype=np.float32)
     if write_output:
         video = cv2.VideoWriter("predicted_video.avi", cv2.VideoWriter_fourcc(*"XVID"), 30, (192, 192))
 
         for i, img in enumerate(frames):
             loc = beta * loc + (1-beta) * preds[i]
-            if (i+1) % 6 == 0:
-                labeled_img = anotator(img, loc)
-                video.write(labeled_img)
+            # if (i+1) % 2 == 0:
+            labeled_img = anotator(img, loc)
+            video.write(labeled_img)
 
         # close the video
         cv2.destroyAllWindows()
@@ -118,9 +121,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "YHN_XYW"
+    model_name = "NAS_T"
     model_type = args.model_type
-    model_type = "YOLO"
+    model_type = "NAS"
     video_input = args.video_input
 
     logger = Logger(model_type, model_name, "", config, dir="models/")
@@ -129,5 +132,5 @@ if __name__ == "__main__":
     # create a dummy video
     # ag = Augmentor('noisy_videos', config)
     # video_input = create_noisy_video(length=60, fps=5, augmentor=ag)
-    video_input = "test_videos/4.mp4"
+    video_input = "test_videos/5.mp4"
     main(model_type, model_name, logger, video_input)

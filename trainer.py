@@ -82,8 +82,12 @@ def main(model_type, model_name, logger):
 
             # init augmentor
             ag = Augmentor('noisy_videos/', config)
-            train_batches = train_batchizer.batches(ag, config["output_dim"], num_c=3)
-            valid_batches = valid_batchizer.batches(ag, config["output_dim"], num_c=3)
+            train_batches = train_batchizer.batches(ag,
+                                                    config["output_dim"],
+                                                    num_c=config["image_channel"])
+            valid_batches = valid_batchizer.batches(ag,
+                                                    config["output_dim"],
+                                                    num_c=config["image_channel"])
 
             # check if learning rate set correctly
             # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
@@ -154,8 +158,6 @@ def main(model_type, model_name, logger):
                 summary = tf.Summary()
                 summary.value.add(tag="train_loss", simple_value=train_mean_loss)
                 summary.value.add(tag="valid_loss", simple_value=valid_mean_loss)
-                # tf.summary.scalar('train_loss', epoch_loss)
-                # tf.summary.scalar('valid_loss', valid_loss)
 
                 log_writer.add_summary(summary, model.global_step.eval())
                 train_loss = []
@@ -169,7 +171,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "NAS_test"
+    model_name = "NAS_T"
     model_type = "NAS"
     model_comment = "GAP No dropout but with Leaky Relu and XYW, and float labels," \
                     " with noisy image less noisy!"

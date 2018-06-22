@@ -73,42 +73,44 @@ class Model(object):
 
         a = module(self.X)
 
-        b, h = a.get_shape().as_list()[-1]
-        x = tf.reshape(a, (b, 1, 1, h))
+        _, h = a.get_shape()
+        x = tf.reshape(a, (-1, 1, 1, h))
 
-        x = self.conv_layer(x, (1, 1), 1024, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), 1024, self.train_flag, 'conv1')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
         x = self.conv_layer(x, (1, 1), 1024, self.train_flag, 'conv2')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 512, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), 512, self.train_flag, 'conv3')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 512, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), 512, self.train_flag, 'conv4')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 256, self.train_flag, 'conv1')
+        x = self.conv_layer(x, (1, 1), 256, self.train_flag, 'conv5')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 128, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), 128, self.train_flag, 'conv6')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 64, self.train_flag, 'conv1')
+        x = self.conv_layer(x, (1, 1), 64, self.train_flag, 'conv7')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 32, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), 32, self.train_flag, 'conv8')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 16, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), 16, self.train_flag, 'conv9')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        x = self.conv_layer(x, (1, 1), 8, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), 8, self.train_flag, 'conv10')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
-        self.logits = self.conv_layer(x, (1, 1), 4, self.train_flag, 'conv2')
+        x = self.conv_layer(x, (1, 1), self.cfg["output_dim"], self.train_flag, 'conv11')
         self.logger.log("conv {}: {}".format(1, x.get_shape()))
 
+        # Logits
+        self.logits = tf.reshape(x, shape=(-1, self.cfg["output_dim"]), name='y')
 
 
         # h_prev = a.get_shape().as_list()[1]

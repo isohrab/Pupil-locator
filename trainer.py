@@ -1,9 +1,10 @@
 import tensorflow as tf
 import argparse
-from Model_Simple import Model as SModel
-from Model_YOLO import Model as YModel
-from Model_GAP import Model as GModel
-from Model_NASNET import Model as NModel
+from simple import Simple
+from yolo import YOLO
+from gap import GAP
+from nasnet import NASNET
+from inception import Inception
 from config import config
 from Batchizer import Batchizer
 from tqdm import tqdm
@@ -15,13 +16,15 @@ from augmentor import Augmentor
 
 def create_model(session, m_type, m_name, logger):
     if m_type == "simple":
-        model = SModel(m_name, config, logger)
+        model = Simple(m_name, config, logger)
     elif m_type == "YOLO":
-        model = YModel(m_name, config, logger)
+        model = YOLO(m_name, config, logger)
     elif m_type == 'GAP':
-        model = GModel(m_name, config, logger)
+        model = GAP(m_name, config, logger)
     elif m_type == 'NAS':
-        model = NModel(m_name, config, logger)
+        model = NASNET(m_name, config, logger)
+    elif m_type == 'INC':
+        model = Inception(m_name, config, logger)
     else:
         raise ValueError
 
@@ -79,15 +82,19 @@ def main(model_type, model_name, logger):
             # initial batchizer
             train_batchizer = Batchizer(train_path, config["batch_size"])
             valid_batchizer = Batchizer(valid_path, config["batch_size"])
-
+# TODO: move arguments to class initializer
             # init augmentor
             ag = Augmentor('noisy_videos/', config)
             train_batches = train_batchizer.batches(ag,
                                                     config["output_dim"],
-                                                    num_c=config["image_channel"])
+                                                    num_c=config["image_channel"],
+                                                    center_input=True,
+                                                    normalize_output=True)
             valid_batches = valid_batchizer.batches(ag,
                                                     config["output_dim"],
-                                                    num_c=config["image_channel"])
+                                                    num_c=config["image_channel"],
+                                                    center_input=True,
+                                                    normalize_output=True)
 
             # check if learning rate set correctly
             # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
@@ -171,8 +178,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "NAS_Conv_F"
-    model_type = "NAS"
+    model_name = "Inception_test"
+    model_type = "INC"
     model_comment = "NAS False with conv 1024, 1024, 512, 512, 256,... 3"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")

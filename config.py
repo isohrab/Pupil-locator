@@ -21,7 +21,7 @@ config["MAX_GRADIANT_NORM"] = 5.0
 # input info
 config["image_width"] = 192
 config["image_height"] = 192
-config["image_channel"] = 3
+config["image_channel"] = 1
 # Output shape
 config["output_dim"] = 3
 config["output_weights"] = [2.0, 2.0, 1.0, 1.0, 0.5]
@@ -46,11 +46,18 @@ config["min_occlusion"] = 0.05
 config["max_occlusion"] = 0.25
 config["occlusion_max_obj"] = 6
 
+# L2 regularization
+config["l2_beta"] = 1e-2
 
 # TODO:
 # 3. Use googLeNet transfer learning
 # split learning rate in x step (polynomial decay) Done,
 # avgPooling in the last layer! Done.
-
+# remove object occlusion
 # YOLO + GAP
-#
+# [123.68, 116.779, 103.939]
+# RNN
+# double frame
+# segNet
+# Autoencoder
+# local response normalization

@@ -29,9 +29,11 @@ class Batchizer(object):
                                        values[4],  # h
                                        values[5]])  # a
 
+        # pixel mean over all images (clean images)
+        self.mean = 112.59541389351622
         self.n_batches = int(np.ceil(len(self.data_list) / self.batch_size))
 
-    def batches(self, ag, lbl_len=4, num_c=1):
+    def batches(self, ag, lbl_len=4, num_c=1, center_input=False, normalize_output=False):
         # before each epoch, shuffle data
         while True:
             shuffle(self.data_list)
@@ -42,12 +44,25 @@ class Batchizer(object):
             for row in self.data_list:
                 image = cv2.imread(row[0], cv2.IMREAD_GRAYSCALE)
                 label = np.asarray(row[1:], dtype=np.float32)
+
                 # add noise to images and corresponding label
                 ag_img, ag_lbl = ag.addNoise(image, label)
+
                 # normalize and change to desired num_channel
                 ag_img = change_channel(ag_img, num_c)
+
+                # mean subtraction
+                if center_input:
+                    ag_img -= self.mean
+
                 images.append(ag_img)
+
+                # normalize labels between 0-1
+                if normalize_output:
+                    ag_lbl = ag_lbl / ag_img.shape[0]
+
                 labels.append(ag_lbl[0:lbl_len])
+
                 img_names.append(row[0])
                 if len(images) == self.batch_size:
                     yield images, labels, img_names

@@ -7,10 +7,10 @@ import numpy as np
 from config import config
 from utils import anotator, change_channel, create_noisy_video
 from Logger import Logger
-from Model_YOLO import Model as YModel
-from Model_Simple import Model as SModel
-from Model_GAP import Model as GModel
-from Model_NASNET import Model as NModel
+from yolo import Model as YModel
+from simple import Model as SModel
+from gap import Model as GModel
+from nasnet import Model as NModel
 from augmentor import Augmentor
 
 
@@ -92,7 +92,7 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
         for i, img in enumerate(frames):
             loc = beta * loc + (1-beta) * preds[i]
             # if (i+1) % 2 == 0:
-            labeled_img = anotator(img, loc)
+            labeled_img = anotator(img, preds[i])
             video.write(labeled_img)
 
         # close the video
@@ -121,9 +121,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "NAS_T"
+    model_name = "YHN_XYW"
     model_type = args.model_type
-    model_type = "NAS"
+    model_type = "YOLO"
     video_input = args.video_input
 
     logger = Logger(model_type, model_name, "", config, dir="models/")

@@ -1,8 +1,8 @@
 config = dict()
 config["batch_size"] = 32
 config["total_steps"] = 200000
-config["validate_every"] = 4000
-config["validate_for"] = 1400
+config["validate_every"] = 100
+config["validate_for"] = 100
 config["save_every"] = 3 * config["validate_every"]
 
 config["n_filters"] =    [16, 32, 128, 128, 256, 256]
@@ -47,7 +47,7 @@ config["max_occlusion"] = 0.25
 config["occlusion_max_obj"] = 6
 
 # L2 regularization
-config["l2_beta"] = 1e-2
+config["l2_beta"] = 0.001
 
 # TODO:
 # 3. Use googLeNet transfer learning

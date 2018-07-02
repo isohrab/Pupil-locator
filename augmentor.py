@@ -42,7 +42,7 @@ class Augmentor(object):
                     frame = cv2.resize(frame, (192, 192))
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     self.frames.append(frame)
-
+            break
             cap.release()
 
         print("In total {} frames loaded".format(len(self.frames)))

@@ -7,10 +7,7 @@ import numpy as np
 from config import config
 from utils import anotator, change_channel, create_noisy_video
 from Logger import Logger
-from yolo import Model as YModel
-from simple import Model as SModel
-from gap import Model as GModel
-from nasnet import Model as NModel
+from models import Simple, NASNET, Inception, GAP, YOLO
 from augmentor import Augmentor
 
 
@@ -25,13 +22,15 @@ def load_model(session, m_type, m_name, logger):
         raise FileNotFoundError
 
     if m_type == "simple":
-        model = SModel(m_name, config, logger)
+        model = Simple(m_name, config, logger)
     elif m_type == "YOLO":
-        model = YModel(m_name, config, logger)
+        model = YOLO(m_name, config, logger)
     elif m_type == "GAP":
-        model = GModel(m_name, config, logger)
+        model = GAP(m_name, config, logger)
     elif m_type == "NAS":
-        model = NModel(m_name, config, logger)
+        model = NASNET(m_name, config, logger)
+    elif m_type == "INC":
+        model = Inception(m_name, config, logger)
     else:
         raise ValueError
 

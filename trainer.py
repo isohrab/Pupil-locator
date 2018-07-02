@@ -1,10 +1,6 @@
 import tensorflow as tf
 import argparse
-from simple import Simple
-from yolo import YOLO
-from gap import GAP
-from nasnet import NASNET
-from inception import Inception
+from models import Simple, NASNET, Inception, GAP, YOLO
 from config import config
 from Batchizer import Batchizer
 from tqdm import tqdm
@@ -88,13 +84,11 @@ def main(model_type, model_name, logger):
             train_batches = train_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["image_channel"],
-                                                    center_input=True,
-                                                    normalize_output=True)
+                                                    center_input=True)
             valid_batches = valid_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["image_channel"],
-                                                    center_input=True,
-                                                    normalize_output=True)
+                                                    center_input=True)
 
             # check if learning rate set correctly
             # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])

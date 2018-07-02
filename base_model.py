@@ -31,7 +31,7 @@ class BaseModel(object):
                                        self.cfg["image_width"],
                                        self.cfg["image_height"],
                                        self.cfg["image_channel"]),
-                                name="ismages_input")
+                                name="images_input")
 
         # shape: [Batch_size, 5] (x,y,w,h,a)
         self.Y = tf.placeholder(dtype=tf.float32,
@@ -54,16 +54,16 @@ class BaseModel(object):
 
             opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
 
-            # add l2 loss
-            l2_loss = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
-            tf.summary.scalar("l2_loss", l2_loss)
-
-            final_loss = self.loss + l2_loss
-            # Training summary for the current batch_loss
-            tf.summary.scalar('final_loss', final_loss)
+            # # # add l2 loss
+            # self.l2_loss = tf.losses.get_regularization_loss()
+            # tf.summary.scalar("l2_loss", self.l2_loss)
+            #
+            # final_loss = self.loss + self.l2_loss
+            # # Training summary for the current batch_loss
+            # tf.summary.scalar('final_loss', final_loss)
 
             # Compute gradients of loss w.r.t. all trainable variables
-            gradients = tf.gradients(final_loss, trainable_params)
+            gradients = tf.gradients(self.loss, trainable_params)
 
             # Clip gradients by a given maximum_gradient_norm
             clip_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)

@@ -119,6 +119,10 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
 
         if with_label:
             img = anotator(img, label)
+            font = cv2.FONT_HERSHEY_PLAIN
+            texts = i[0].split("/")
+            text = texts[1]+"/"+texts[2]+"/"+texts[3]
+            img = cv2.putText(img, text, (5, 10), font, 0.8, (250, 0, 0), 1, cv2.LINE_8)
         else:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 

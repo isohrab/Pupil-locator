@@ -42,8 +42,15 @@ class Augmentor(object):
                     frame = cv2.resize(frame, (192, 192))
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     self.frames.append(frame)
-            break
+
             cap.release()
+        # make noises stronger
+        exposured_frames = []
+        for frame in self.frames:
+            exp_frame = self.addExposure(frame)
+            exposured_frames.append(exp_frame)
+
+        self.frames = exposured_frames
 
         print("In total {} frames loaded".format(len(self.frames)))
 
@@ -162,6 +169,21 @@ class Augmentor(object):
 
         return in_img
 
+    def addExposure(self, in_img):
+        """
+        Add exposure to image
+        :param in_img: input image
+        :return: exposured image
+        """
+        if self.cfg["prob_exposure"] < rf(0, 1):
+            return in_img
+
+        exp_val = rf(self.cfg["min_exposure"], self.cfg["max_exposure"])
+        in_img = in_img * exp_val
+        in_img = np.clip(in_img, 0, 255)
+        in_img = np.asarray(in_img, dtype=np.uint8)
+        return in_img
+
     def addNoise(self, in_img, in_label):
         """
         Add all possible noise to the image
@@ -176,7 +198,8 @@ class Augmentor(object):
         # apply noise
         c_img, c_label = self.downscale(c_img, c_label)
         c_img = self.addReflection(c_img)
-        c_img = self.addOcclusion(c_img, c_label)
+        # c_img = self.addOcclusion(c_img, c_label)
+        # c_img = self.addExposure(c_img)
         c_img = self.addBlur(c_img)
         return c_img, c_label
 

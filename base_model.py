@@ -54,10 +54,14 @@ class BaseModel(object):
 
             opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
 
-            # # # add l2 loss
-            # self.l2_loss = tf.losses.get_regularization_loss()
-            # tf.summary.scalar("l2_loss", self.l2_loss)
+            # # add l2 loss
+            # self.l2_loss = 0
+            # for v in trainable_params:
+            #     if 'kernel' in v.name:
+            #         self.l2_loss += self.cfg["l2_beta"] * tf.nn.l2_loss(v)
             #
+            # tf.summary.scalar("l2_loss", self.l2_loss)
+            # #
             # final_loss = self.loss + self.l2_loss
             # # Training summary for the current batch_loss
             # tf.summary.scalar('final_loss', final_loss)

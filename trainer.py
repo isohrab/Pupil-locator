@@ -104,7 +104,7 @@ def main(model_type, model_name, logger):
                         batch_loss, summary = model.train(sess, x, y, config["keep_prob"], lr)
                         train_loss.append(batch_loss)
 
-                        t.set_description_str("batch_loss:{0:8.2f}".format(batch_loss))
+                        t.set_description_str("batch_loss:{0:8.2f}, ".format(batch_loss))
                         log_writer.add_summary(summary, model.global_step.eval())
                         t.update(1)
 
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     model_name = "Inception_test"
     model_type = "INC"
-    model_comment = "NAS False with conv 1024, 1024, 512, 512, 256,... 3"
+    model_comment = "Inception without l2"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")

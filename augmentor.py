@@ -44,7 +44,7 @@ class Augmentor(object):
                     self.frames.append(frame)
 
             cap.release()
-        # make noises stronger
+        # make noises stronger by adding exposure to them
         exposured_frames = []
         for frame in self.frames:
             exp_frame = self.addExposure(frame)

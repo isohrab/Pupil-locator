@@ -121,7 +121,7 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
             img = anotator(img, label)
             font = cv2.FONT_HERSHEY_PLAIN
             texts = i[0].split("/")
-            text = texts[1]+"/"+texts[2]+"/"+texts[3]
+            text = texts[1] + "/" + texts[2] + "/" + texts[3]
             img = cv2.putText(img, text, (5, 10), font, 0.8, (250, 0, 0), 1, cv2.LINE_8)
         else:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
@@ -153,7 +153,10 @@ def change_channel(frame, num_channel=1):
 
     return img
 
+
 MIN_IMG_W = 192
+
+
 def bound_it(amin, amax, imgmax):
     assert imgmax >= MIN_IMG_W
     s = amax - amin
@@ -172,5 +175,6 @@ def bound_it(amin, amax, imgmax):
             assert amin >= 0 and amax < imgmax
     return [amin, amax]
 
+
 if __name__ == "__main__":
-    print(bound_it(163,423,333))
+    print(bound_it(163, 423, 333))

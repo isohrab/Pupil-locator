@@ -11,6 +11,7 @@ from utils import anotator, change_channel, create_noisy_video
 from Logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from augmentor import Augmentor
+from utils import anotator
 
 
 def load_model(session, m_type, m_name, logger):
@@ -63,8 +64,8 @@ def rescale(image, label):
     label[1] = label[1] * scale_value
 
     # one of pad should be zero
-    w_pad = int((scale_side - image.shape[1]) / 2)
-    h_pad = int((scale_side - image.shape[0]) / 2)
+    w_pad = int((config["image_width"] - scaled_image.shape[1]) / 2)
+    h_pad = int((config["image_width"] - scaled_image.shape[0]) / 2)
 
     # add half of the pad to the label (x, y)
     label[0] += w_pad
@@ -124,7 +125,9 @@ def read_batch(csv_path, b_size, d_name):
 
             # rescale images to 192x192 pixels
             img, lbl = rescale(img, [x, y])
-
+            img  = anotator(img, [lbl[0], lbl[1], 15])
+            cv2.imwrite('{}.png'.format(d_name), img)
+            break
             img = np.expand_dims(img, -1)
             images.append(img)
             labels.append(lbl)
@@ -194,7 +197,7 @@ def main(m_type, m_name, logger):
             d = np.asarray(val, dtype=np.float32)
             acc = np.mean(np.asarray(d < e, dtype=np.int))
             print("{0} with {1} pixel error: {2:2.2f}%".format(key, e, acc * 100))
-            print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+        print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
 
     print("Done...")
 

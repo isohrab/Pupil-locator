@@ -47,28 +47,6 @@ def load_model(session, m_type, m_name, logger):
     return model
 
 
-def read_csv(csv_path, img_shape):
-    """
-    read the CSV file and return the location array
-    Also we do:
-    x= txt_x/2
-    y= image_size_y - (txt_y/2)
-    :param csv_path:
-    :return: return a nx2 numpy array float32
-    """
-    truth = []
-    with open(csv_path, mode='r') as f:
-        # read the header
-        _ = f.readline()
-        for line in f:
-            values = line.split(' ')
-            x = int(values[2]) / 2
-            y = int(img_shape[0] - int(values[3]) / 2)
-            truth.append([x, y])
-
-    return np.asarray(truth, dtype=np.float32)
-
-
 def rescale(image, label):
     scale_side = max(image.shape)
     # image width and height are equal to 192
@@ -101,62 +79,112 @@ def rescale(image, label):
     return new_image, label
 
 
-def main(m_type, m_name, logger, write_latex=True):
+def real_image_name(img_name):
+    """
+    get the image name from CSV file and add zero pad before the file name
+    """
+    diff = 10 - len(img_name)
+    pad = ['0' for i in range(diff)]
+    return ''.join(pad) + img_name
+
+
+def get_len(csv_path):
+    """
+    get a csv value path and return len of data
+    :param csv_path:
+    :return: len of data
+    """
+    counter = 0
+    with open(csv_path, mode='r') as f:
+        # pass the header
+        f.readline()
+        for line in f:
+            counter += 1
+
+    return counter
+
+
+def read_batch(csv_path, b_size, d_name):
+    images = []
+    labels = []
+
+    with open(csv_path, mode='r') as f:
+        # pass the header
+        f.readline()
+        for line in f:
+            values = line.split(" ")
+
+            # read the image
+            image_name = real_image_name(values[1])
+            img = cv2.imread("emma_data/{}/{}.png".format(d_name, image_name), cv2.IMREAD_GRAYSCALE)
+
+            # read and convert the labels
+            x = int(values[2]) / 2
+            y = int(img.shape[0] - int(values[3]) / 2)
+
+            # rescale images to 192x192 pixels
+            img, lbl = rescale(img, [x, y])
+
+            img = np.expand_dims(img, -1)
+            images.append(img)
+            labels.append(lbl)
+            if len(images) == b_size:
+                yield images, np.asarray(labels, dtype=np.float32)
+                images = []
+                labels = []
+
+    # yield the rest
+    if len(images) != 0:
+        yield images, np.asarray(labels, dtype=np.float32)
+
+
+def main(m_type, m_name, logger):
     with tf.Session() as sess:
 
         # load best model
         model = load_model(sess, m_type, m_name, logger)
 
-        # get the path of datasets:
-        globs = glob.glob('emma_data/*')
-        globs = sorted(globs)
-        dataset_folders = [d for i, d in enumerate(globs) if i % 2 == 0]
-        dataset_csvs = [d for i, d in enumerate(globs) if i % 2 == 1]
+        # get the csv files
+        datasets = glob.glob('emma_data/*.txt')
+        datasets = sorted(datasets)
 
         # we save the results of all dataset in to this list
         dataset_results = {}
 
-        for f, f_path in enumerate(dataset_folders):
+        for d in datasets:
+
+            # get the name of dataset from the path
+            dataset_name = d.split("/")[1].split(".")[0]
 
             # save the result (differences) in the list
-            dataset_results[f_path] = []
+            dataset_results[dataset_name] = []
 
-            # dataset_name = dataset_names[index].split("/")[1]
-            dataset_images = glob.glob("{}/*.png".format(f_path))
+            dataset_len = get_len(d)
 
-            # sort the images to match with the labels in csv
-            dataset_images = sorted(dataset_images)
+            batch_size = 64
+            batch = read_batch(d, batch_size, dataset_name)
 
-            # Just read the first image size for Dikablis converting!!!
-            img_shape = cv2.imread(dataset_images[0], cv2.IMREAD_GRAYSCALE).shape
-            true_loc = read_csv(dataset_csvs[f], img_shape)
+            # use tqdm progress bar
+            tqdm_len = np.ceil(dataset_len / batch_size)
+            with tqdm(total=tqdm_len, unit='batch') as t:
+                # set the name of dataset as the title of progress bar
+                t.set_description_str(dataset_name)
 
-            # loop over the images and feed them to the model
-            with tqdm(total=len(dataset_images), unit='image') as t:
-                t.set_description_str(f_path.split("/")[1])
-                for i, i_path in enumerate(dataset_images):
-                    # read the image
-                    img = cv2.imread(i_path, cv2.IMREAD_GRAYSCALE)
+                # loop over batch of images
+                for images, labels in batch:
+                    predictions = model.predict(sess, images)
 
-                    # reshape the image and label respectively
-                    img, lbl = rescale(img, true_loc[i])
-
-                    img = np.expand_dims(img, -1)
-                    p = model.predict(sess, [img])
-
-                    p = p[0]
                     # calculate the difference
-                    a = p[0] - lbl[0]
-                    b = p[1] - lbl[1]
+                    a = predictions[:, 0] - labels[:, 0]
+                    b = predictions[:, 1] - labels[:, 1]
 
                     diff = np.sqrt((a * a + b * b))
 
-                    dataset_results[f_path].append(diff)
+                    dataset_results[dataset_name].extend(diff)
                     t.update()
 
-
     # print the result for different pixel error
-    pixel_errors = [1, 2, 3, 4, 5, 7, 10, 15, 20]
+    pixel_errors = [2, 3, 5, 7, 10, 15, 20]
 
     # save the results in a dic
     # dataset_errors = {}
@@ -165,7 +193,8 @@ def main(m_type, m_name, logger, write_latex=True):
         for key, val in dataset_results.items():
             d = np.asarray(val, dtype=np.float32)
             acc = np.mean(np.asarray(d < e, dtype=np.int))
-            print("{0} with {1} pixel error: {2:2.2f}%".format(key.split('/')[1], e, acc*100))
+            print("{0} with {1} pixel error: {2:2.2f}%".format(key, e, acc * 100))
+            print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
 
     print("Done...")
 

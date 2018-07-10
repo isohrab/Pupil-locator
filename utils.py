@@ -152,3 +152,25 @@ def change_channel(frame, num_channel=1):
         raise ValueError("Are you sure?")
 
     return img
+
+MIN_IMG_W = 192
+def bound_it(amin, amax, imgmax):
+    assert imgmax >= MIN_IMG_W
+    s = amax - amin
+    if s < MIN_IMG_W:
+        d = MIN_IMG_W - s
+        amin = amin - d / 2
+        amax = amax + d / 2
+        if amin < 0:
+            amax += abs(amin)
+            amin = 0
+
+        if amax > imgmax:
+            amin -= amax - imgmax
+            amax = imgmax
+
+            assert amin >= 0 and amax < imgmax
+    return [amin, amax]
+
+if __name__ == "__main__":
+    print(bound_it(163,423,333))

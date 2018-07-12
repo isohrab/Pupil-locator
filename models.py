@@ -1001,6 +1001,8 @@ class Inception(BaseModel):
             self.GAP = tf.reduce_mean(net, axis=[1, 2], name="GAP")
             self.logger.log("GAP shape {}".format(self.GAP.get_shape()))
 
+            # self.GAP = tf.nn.dropout(self.GAP, self.keep_prob, name="GAP_dropout")
+
             # # Block B reducttion
             # net = self.block_b_reduction(net, "Reduction_B", self.train_flag)
             # self.logger.log("Reduction_B shape {}".format(net.get_shape()))
@@ -1025,7 +1027,7 @@ class Inception(BaseModel):
                                    use_bias=False,
                                    name="final_conv")
 
-            net = tf.nn.relu(net, name="ReLu")
+            net = tf.nn.leaky_relu(net, alpha=0.13)
             self.logger.log("Final layer {}: {}".format("Logits", net.get_shape()))
 
             # Logits

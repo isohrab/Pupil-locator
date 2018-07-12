@@ -84,11 +84,13 @@ def main(model_type, model_name, logger):
             train_batches = train_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["image_channel"],
-                                                    center_input=True)
+                                                    zero_mean=True,
+                                                    normalize_output=True)
             valid_batches = valid_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["image_channel"],
-                                                    center_input=True)
+                                                    zero_mean=True,
+                                                    normalize_output=True)
 
             # check if learning rate set correctly
             # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
@@ -104,7 +106,7 @@ def main(model_type, model_name, logger):
                         batch_loss, summary = model.train(sess, x, y, config["keep_prob"], lr)
                         train_loss.append(batch_loss)
 
-                        t.set_description_str("batch_loss:{0:8.2f}, ".format(batch_loss))
+                        t.set_description_str("batch_loss:{0:2.8f}, ".format(batch_loss))
                         log_writer.add_summary(summary, model.global_step.eval())
                         t.update(1)
 
@@ -121,7 +123,7 @@ def main(model_type, model_name, logger):
                         batch_loss, _, pred = model.eval(sess, x, y)
                         valid_loss.append(batch_loss)
 
-                        t.set_description_str("batch_loss:{0:8.2f}".format(batch_loss))
+                        t.set_description_str("batch_loss:{0:2.8f}".format(batch_loss))
                         valid_counter += 1
 
                         # select a random image from current batch and add it for visualization
@@ -139,7 +141,7 @@ def main(model_type, model_name, logger):
                 train_mean_loss = np.mean(train_loss)
                 valid_mean_loss = np.mean(valid_loss)
                 logger.log(
-                    'Step:{0:6}: avg train loss:{1:8.2f}, avg validation loss:{2:8.2f}'.format(model.global_step.eval(),
+                    'Step:{0:6}: avg train loss:{1:2.8f}, avg validation loss:{2:2.8f}'.format(model.global_step.eval(),
                                                                                                train_mean_loss,
                                                                                                valid_mean_loss))
 

@@ -80,9 +80,19 @@ def rescale(image, label):
     return new_image, label
 
 
+def normalize_image(img_in):
+    # from batachizer
+    mean = 112.59541
+    img_out = np.asarray(img_in - mean, dtype=np.float32)
+    img_out = img_out / 255
+
+    return img_out
+
+
 def real_image_name(img_name):
     """
     get the image name from CSV file and add zero pad before the file name
+    convert 12345 to 0000012345
     """
     diff = 10 - len(img_name)
     pad = ['0' for i in range(diff)]
@@ -124,10 +134,16 @@ def read_batch(csv_path, b_size, d_name):
             y = int(img.shape[0] - int(values[3]) / 2)
 
             # rescale images to 192x192 pixels
-            img, lbl = rescale(img, [x, y])
+            # img, lbl = rescale(img, [x, y])
+
+            # normalize image and label
+            img = normalize_image(img)
+
+            # expand the channel dimension
             img = np.expand_dims(img, -1)
+
             images.append(img)
-            labels.append(lbl)
+            labels.append([x, y])
             if len(images) == b_size:
                 yield images, np.asarray(labels, dtype=np.float32)
                 images = []
@@ -171,12 +187,16 @@ def main(m_type, m_name, logger):
                 t.set_description_str(dataset_name)
 
                 # loop over batch of images
-                for images, labels in batch:
+                for images, truths in batch:
                     predictions = model.predict(sess, images)
 
+                    # get the image w/h for denormalizing the labels
+                    w = images[0].shape[1]
+                    h = images[0].shape[0]
+
                     # calculate the difference
-                    a = predictions[:, 0] - labels[:, 0]
-                    b = predictions[:, 1] - labels[:, 1]
+                    a = (predictions[:, 0]*w) - truths[:, 0]
+                    b = (predictions[:, 1]*h) - truths[:, 1]
 
                     diff = np.sqrt((a * a + b * b))
 

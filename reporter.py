@@ -125,9 +125,6 @@ def read_batch(csv_path, b_size, d_name):
 
             # rescale images to 192x192 pixels
             img, lbl = rescale(img, [x, y])
-            img  = anotator(img, [lbl[0], lbl[1], 15])
-            cv2.imwrite('{}.png'.format(d_name), img)
-            break
             img = np.expand_dims(img, -1)
             images.append(img)
             labels.append(lbl)
@@ -187,7 +184,7 @@ def main(m_type, m_name, logger):
                     t.update()
 
     # print the result for different pixel error
-    pixel_errors = [2, 3, 5, 7, 10, 15, 20]
+    pixel_errors = [2, 3, 4, 5, 7, 10, 15, 20]
 
     # save the results in a dic
     # dataset_errors = {}
@@ -221,16 +218,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "YHN_XYW"
+    model_name = "Inception1"
     model_type = args.model_type
-    model_type = "YOLO"
+    model_type = "INC"
     video_input = args.video_input
 
     logger = Logger(model_type, model_name, "", config, dir="models/")
     logger.log("Start inferring model...")
 
-    # create a dummy video
-    # ag = Augmentor('noisy_videos', config)
-    # video_input = create_noisy_video(length=60, fps=5, augmentor=ag)
-    video_input = "test_videos/5.mp4"
     main(model_type, model_name, logger)
+

@@ -1,7 +1,7 @@
 import os
 from random import shuffle
 import numpy as np
-from utils import change_channel
+from utils import change_channel, gray_normalizer, label_normalizer
 import cv2
 
 
@@ -29,8 +29,6 @@ class Batchizer(object):
                                        values[4],  # h
                                        values[5]])  # a
 
-        # pixel mean over all images (clean images)
-        self.mean = 112.59541
         self.n_batches = int(np.ceil(len(self.data_list) / self.batch_size))
 
     def batches(self, ag, lbl_len=4, num_c=1,
@@ -50,32 +48,23 @@ class Batchizer(object):
                 # add noise to images and corresponding label
                 ag_img, ag_lbl = ag.addNoise(image, label)
 
-
-
-                # zero mean the image
-                if zero_mean:
-                    ag_img = np.asarray(ag_img - self.mean, dtype=np.float32)
-                    ag_img /= 255
-
-                # change to desired num_channel
-                ag_img = change_channel(ag_img, num_c)
-
-                images.append(ag_img)
-
                 # discard unused labels
                 ag_lbl = ag_lbl[0:lbl_len]
 
                 # normalize labels between 0-1
                 if normalize_output:
-                    ag_lbl[0] = ag_lbl[0] / ag_img.shape[1]   # x/ width
-                    ag_lbl[1] = ag_lbl[1] / ag_img.shape[0]   # y/ height
-
-                    if len(ag_lbl) >= 3:
-                        ag_lbl[2] = ag_lbl[2] / ag_img.shape[1]     # w/ width
-                    if len(ag_lbl) >= 4:
-                        ag_lbl[3] = ag_lbl[3] / ag_img.shape[0]     # h/ height
+                    ag_lbl = label_normalizer(ag_img.shape, *ag_lbl)
 
                 labels.append(ag_lbl)
+
+                # zero mean the image
+                if zero_mean:
+                    ag_img = gray_normalizer(ag_img)
+
+                # change to desired num_channel
+                ag_img = change_channel(ag_img, num_c)
+
+                images.append(ag_img)
 
                 img_names.append(row[0])
                 if len(images) == self.batch_size:

@@ -61,7 +61,7 @@ class BaseModel(object):
             #         self.l2_loss += self.cfg["l2_beta"] * tf.nn.l2_loss(v)
             #
             # tf.summary.scalar("l2_loss", self.l2_loss)
-            # #
+            # # #
             # final_loss = self.loss + self.l2_loss
             # # Training summary for the current batch_loss
             # tf.summary.scalar('final_loss', final_loss)

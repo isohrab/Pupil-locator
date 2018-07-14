@@ -177,3 +177,87 @@ def bound_it(amin, amax, imgmax):
 
 if __name__ == "__main__":
     print(bound_it(163, 423, 333))
+
+def gray_normalizer(gray):
+    """
+    get a grayscale image with pixel value 0-255
+    and return normalized pixel with value between -1,1
+    :param gray: input grayscale image
+    :return: normalized grayscale image
+    """
+    # average mean over all training images ( without noise)
+    mean = 112.59541
+    out_gray = np.asarray(gray - mean, dtype=np.float32)
+    out_gray = out_gray / 255
+    return out_gray
+
+
+def gray_denormalizer(gray):
+    """
+    Get a normalized gray image and convert to value 0-255
+    :param gray: normalized grayscale image
+    :return: denormalized grayscale image
+    """
+    # average mean over all training images ( without noise)
+    mean = 112.59541
+    out_gray = gray * 255
+    out_gray = np.asarray(out_gray + mean, dtype=np.uint8)
+
+    return out_gray
+
+def label_normalizer(shape, x, y, w=None, h=None):
+    """
+    Get a label and normalize it to 0-1 based on the image shape
+    :param x: x center pupil
+    :param y: y center pupil
+    :param w: width of pupil
+    :param h: height of pupil
+    :param shape: shape of image
+    :return: list of [x, y, w, y]
+    """
+    label = []
+    img_h, img_w = shape
+    x_out = x / img_w
+    label.append(x_out)
+
+    y_out = y / img_h
+    label.append(y_out)
+
+    if w is not None:
+        w_out = w / img_w
+        label.append(w_out)
+
+    if h is not None:
+        h_out = h / img_h
+        label.append(h_out)
+
+    return label
+
+
+def label_denormalizer(shape, x, y, w=None, h=None):
+    """
+    Get a label and denormalize it based on the image shape
+    :param x: x center pupil
+    :param y: y center pupil
+    :param w: width of pupil
+    :param h: height of pupil
+    :param shape: shape of image
+    :return: list of [x, y, w, y]
+    """
+    label = []
+    img_h, img_w = shape
+    x_out = x * img_w
+    label.append(x_out)
+
+    y_out = y * img_h
+    label.append(y_out)
+
+    if w is not None:
+        w_out = w * img_w
+        label.append(w_out)
+
+    if h is not None:
+        h_out = h * img_h
+        label.append(h_out)
+
+    return label

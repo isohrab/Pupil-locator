@@ -45,10 +45,10 @@ def print_predictions(result, logger):
         img_path = r[2]
 
         logger.log("Path: " + img_path)
-        logger.log("truth: {0:8.2f} {1:8.2f} {2:8.2f}".format(y[0],
+        logger.log("truth: {0:2.4f} {1:2.4f} {2:2.4f}".format(y[0],
                                                               y[1],
                                                               y[2]))
-        logger.log("pred : {0:8.2f} {1:8.2f} {2:8.2f}\n".format(pred[0],
+        logger.log("pred : {0:2.4f} {1:2.4f} {2:2.4f}\n".format(pred[0],
                                                                 pred[1],
                                                                 pred[2]))
 

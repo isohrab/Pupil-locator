@@ -5,7 +5,7 @@ import argparse
 import cv2
 import numpy as np
 from config import config
-from utils import anotator, change_channel, create_noisy_video
+from utils import anotator, change_channel, gray_normalizer, label_denormalizer
 from Logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from augmentor import Augmentor
@@ -73,9 +73,11 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
                 if frame.shape[0] != 192:
                     frame = cv2.resize(frame, (192, 192))
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                image = change_channel(gray, config["image_channel"])
+                image = gray_normalizer(gray)
+                image = change_channel(image, config["image_channel"])
                 p = model.predict(sess, [image])
-                preds.append(p[0])
+                label = label_denormalizer(gray.shape, *p[0])
+                preds.append(label)
                 frames.append(gray)
                 counter += 1
 
@@ -120,9 +122,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "YHN_XYW"
+    model_name = "Inception_test"
     model_type = args.model_type
-    model_type = "YOLO"
+    model_type = "INC"
     video_input = args.video_input
 
     logger = Logger(model_type, model_name, "", config, dir="models/")

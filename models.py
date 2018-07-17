@@ -984,6 +984,9 @@ class Inception(BaseModel):
             net = self.block_a(net, "Block_A1", self.train_flag)
             self.logger.log("Block_A1 shape {}".format(net.get_shape()))
 
+            net = self.block_a(net, "Block_A2", self.train_flag)
+            self.logger.log("Block_A2 shape {}".format(net.get_shape()))
+
             # Block A: Reduction
             net = self.block_a_reduction(net, "Reduction_A", self.train_flag)
             self.logger.log("Reduction_A shape {}".format(net.get_shape()))
@@ -998,10 +1001,13 @@ class Inception(BaseModel):
             net = self.block_b(net, "Block_B2", self.train_flag)
             self.logger.log("Block_B2 shape {}".format(net.get_shape()))
 
+            net = self.block_b(net, "Block_B3", self.train_flag)
+            self.logger.log("Block_B3 shape {}".format(net.get_shape()))
+
             self.GAP = tf.reduce_mean(net, axis=[1, 2], name="GAP")
             self.logger.log("GAP shape {}".format(self.GAP.get_shape()))
 
-            # self.GAP = tf.nn.dropout(self.GAP, self.keep_prob, name="GAP_dropout")
+            self.GAP = tf.nn.dropout(self.GAP, self.keep_prob, name="GAP_dropout")
 
             # # Block B reducttion
             # net = self.block_b_reduction(net, "Reduction_B", self.train_flag)

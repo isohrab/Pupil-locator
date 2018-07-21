@@ -1,4 +1,4 @@
-from utils import rf, ri, anotator
+from utils import rf, ri, annotator
 import os
 import numpy as np
 from PIL import Image
@@ -219,10 +219,10 @@ if __name__ == "__main__":
     ag = Augmentor('noisy_videos/', config)
     scaled_img, scaled_label = ag.addNoise(img, true_label)
 
-    pil_img = Image.fromarray(anotator(scaled_img, scaled_label))
+    pil_img = Image.fromarray(annotator(scaled_img, scaled_label))
     pil_img.show()
 
-    pil_img = Image.fromarray(anotator(img, true_label))
+    pil_img = Image.fromarray(annotator(img, true_label))
     pil_img.show()
     print("true label {}".format(true_label))
     print("scaled label {}".format(scaled_label))

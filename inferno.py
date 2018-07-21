@@ -5,7 +5,7 @@ import argparse
 import cv2
 import numpy as np
 from config import config
-from utils import anotator, change_channel, gray_normalizer, label_denormalizer
+from utils import annotator, change_channel, gray_normalizer, label_denormalizer
 from Logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from augmentor import Augmentor
@@ -93,7 +93,7 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
         for i, img in enumerate(frames):
             loc = beta * loc + (1-beta) * preds[i]
             # if (i+1) % 2 == 0:
-            labeled_img = anotator(img, preds[i])
+            labeled_img = annotator(img, preds[i])
             video.write(labeled_img)
 
         # close the video

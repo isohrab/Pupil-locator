@@ -977,7 +977,7 @@ class Inception(BaseModel):
             net = tf.concat([branch_0, branch_1], axis=3)
             self.logger.log("Mixed_5a shape {}".format(net.get_shape()))
 
-            # Block A: 2x
+            # Block A: 3x
             net = self.block_a(net, "Block_A0", self.train_flag)
             self.logger.log("Block_A0 shape {}".format(net.get_shape()))
 
@@ -991,7 +991,7 @@ class Inception(BaseModel):
             net = self.block_a_reduction(net, "Reduction_A", self.train_flag)
             self.logger.log("Reduction_A shape {}".format(net.get_shape()))
 
-            # Block B: 3x
+            # Block B: 4x
             net = self.block_b(net, "Block_B0", self.train_flag)
             self.logger.log("Block_B0 shape {}".format(net.get_shape()))
 

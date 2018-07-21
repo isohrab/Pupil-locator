@@ -33,15 +33,18 @@ def ri(low, high):
     return np.random.randint(low, high)
 
 
-def anotator(img, label):
+def annotator(img, x, y, w=10, h=10):
     """
-    draw a yellow + on input image based label
-    :param img: input image
-    :param label: location of pupil
-    :return: anotated pupil location
+    draw a circle around predicted pupil
+    :param img: input frame
+    :param x: x-position
+    :param y: y-position
+    :param w: width of pupil
+    :param h: height of pupil
+    :return: an image with a circle around the pupil
     """
-    w, h = img.shape
-    rgb = np.zeros(shape=(w, h, 3), dtype=np.uint8)
+    w_img, h_img = img.shape
+    rgb = np.zeros(shape=(w_img, h_img, 3), dtype=np.uint8)
     rgb[:, :, 0] = img  # TODO: a better way!
     rgb[:, :, 1] = img
     rgb[:, :, 2] = img
@@ -60,13 +63,8 @@ def anotator(img, label):
     # rgb = cv2.line(rgb, (l2xs, l2ys), (l2xe, l2ye), (255, 255, 0), 1)
 
     # draw ellipse
-    x = label[0]
-    y = label[1]
-    w = label[2]
-    h = label[2]
-    a = 0
     color = (0, 250, 250)
-    rgb = cv2.ellipse(rgb, ((x, y), (w, h), a), color, 1)
+    rgb = cv2.ellipse(rgb, ((x, y), (w, h), 0), color, 1)
 
     return rgb
 
@@ -118,7 +116,7 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
             img = np.asarray(img, dtype=np.uint8)
 
         if with_label:
-            img = anotator(img, label)
+            img = annotator(img, label)
             font = cv2.FONT_HERSHEY_PLAIN
             texts = i[0].split("/")
             text = texts[1] + "/" + texts[2] + "/" + texts[3]

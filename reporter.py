@@ -7,11 +7,9 @@ import cv2
 from tqdm import tqdm
 import numpy as np
 from config import config
-from utils import anotator, change_channel, create_noisy_video
+import utils as u
 from Logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
-from augmentor import Augmentor
-from utils import anotator
 
 
 def load_model(session, m_type, m_name, logger):
@@ -80,15 +78,6 @@ def rescale(image, label):
     return new_image, label
 
 
-def normalize_image(img_in):
-    # from batachizer
-    mean = 112.59541
-    img_out = np.asarray(img_in - mean, dtype=np.float32)
-    img_out = img_out / 255
-
-    return img_out
-
-
 def real_image_name(img_name):
     """
     get the image name from CSV file and add zero pad before the file name
@@ -134,16 +123,16 @@ def read_batch(csv_path, b_size, d_name):
             y = int(img.shape[0] - int(values[3]) / 2)
 
             # rescale images to 192x192 pixels
-            # img, lbl = rescale(img, [x, y])
+            img, lbl = rescale(img, [x, y])
 
             # normalize image and label
-            img = normalize_image(img)
+            img = u.gray_normalizer(img)
 
             # expand the channel dimension
             img = np.expand_dims(img, -1)
 
             images.append(img)
-            labels.append([x, y])
+            labels.append(lbl)
             if len(images) == b_size:
                 yield images, np.asarray(labels, dtype=np.float32)
                 images = []
@@ -152,6 +141,28 @@ def read_batch(csv_path, b_size, d_name):
     # yield the rest
     if len(images) != 0:
         yield images, np.asarray(labels, dtype=np.float32)
+
+
+def video_creator(video_name, images, labels, fps=15):
+    """
+    get a list of images and their corresponidng labels and create a labeled video
+    :param video_name: the output video name
+    :param images: test images with shape (192,192,1) which should squeezed before writing the video
+    :param labels: predicted labels with a value between 0-1
+    :return: None
+    """
+    video = cv2.VideoWriter(video_name+".avi", cv2.VideoWriter_fourcc(*'XVID'), fps, (192, 192))
+
+    for img, lbl in zip(images, labels):
+        img = np.squeeze(img)
+        img = u.gray_denormalizer(img)
+        lbl = u.label_denormalizer(img.shape, *lbl)
+        annotated_img = u.annotator(img, *lbl)
+        video.write(annotated_img)
+
+    cv2.destroyAllWindows()
+    video.release()
+    print("{} video has been created successfully".format(video_name))
 
 
 def main(m_type, m_name, logger):
@@ -186,6 +197,9 @@ def main(m_type, m_name, logger):
                 # set the name of dataset as the title of progress bar
                 t.set_description_str(dataset_name)
 
+                test_images = []
+                pred_labels = []
+
                 # loop over batch of images
                 for images, truths in batch:
                     predictions = model.predict(sess, images)
@@ -202,6 +216,13 @@ def main(m_type, m_name, logger):
 
                     dataset_results[dataset_name].extend(diff)
                     t.update()
+
+                    # add images and predicted labels to test_images and pred_labels to creating the video
+                    test_images.extend(images)
+                    pred_labels.extend(predictions)
+
+                # create the predicted labels on test sets
+                video_creator(dataset_name, test_images, pred_labels)
 
     # print the result for different pixel error
     pixel_errors = [2, 3, 4, 5, 7, 10, 15, 20]
@@ -238,7 +259,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "Inception1"
+    model_name = "Inception_test"
     model_type = args.model_type
     model_type = "INC"
     video_input = args.video_input

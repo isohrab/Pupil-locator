@@ -165,6 +165,27 @@ def video_creator(video_name, images, labels, fps=15):
     print("{} video has been created successfully".format(video_name))
 
 
+def print_resutls(errors_dic, pixels_list):
+    # sort the dataset errors to have a uniform results
+    # generate the header
+    header = "Dataset name: "
+    for p in pixels_list:
+        header += str(p) + "\t\t"
+
+    print(header)
+
+    def row_writer(title, errors_list):
+        row = title + ": "
+        for val in errors_list:
+            row += " {:2.1f}\t".format(val)
+
+        return row
+
+    print(header)
+    for key in sorted(errors_dic.keys()):
+        print(row_writer(key, errors_dic[key]))
+
+
 def main(m_type, m_name, logger):
     with tf.Session() as sess:
 
@@ -225,19 +246,19 @@ def main(m_type, m_name, logger):
                 video_creator(dataset_name, test_images, pred_labels)
 
     # print the result for different pixel error
-    pixel_errors = [2, 3, 4, 5, 7, 10, 15, 20]
+    pixel_errors = [1, 2, 3, 4, 5, 7, 10, 15, 20]
 
     # save the results in a dic
-    # dataset_errors = {}
+    dataset_errors = {}
 
-    for e in pixel_errors:
-        for key, val in dataset_results.items():
+    for key, val in dataset_results.items():
+        dataset_errors[key] = []
+        for e in pixel_errors:
             d = np.asarray(val, dtype=np.float32)
             acc = np.mean(np.asarray(d < e, dtype=np.int))
-            print("{0} with {1} pixel error: {2:2.2f}%".format(key, e, acc * 100))
-        print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+            dataset_errors[key].append(acc)
 
-    print("Done...")
+    print_resutls(dataset_errors, pixel_errors)
 
 
 if __name__ == "__main__":

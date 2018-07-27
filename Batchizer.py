@@ -1,7 +1,7 @@
 import os
 from random import shuffle
 import numpy as np
-from utils import change_channel, gray_normalizer, label_normalizer
+from utils import change_channel, gray_normalizer
 import cv2
 
 
@@ -32,8 +32,7 @@ class Batchizer(object):
         self.n_batches = int(np.ceil(len(self.data_list) / self.batch_size))
 
     def batches(self, ag, lbl_len=4, num_c=1,
-                zero_mean=False,
-                normalize_output=False):
+                zero_mean=False):
         # before each epoch, shuffle data
         while True:
             shuffle(self.data_list)
@@ -50,10 +49,6 @@ class Batchizer(object):
 
                 # discard unused labels
                 ag_lbl = ag_lbl[0:lbl_len]
-
-                # normalize labels between 0-1
-                if normalize_output:
-                    ag_lbl = label_normalizer(ag_img.shape, *ag_lbl)
 
                 labels.append(ag_lbl)
 

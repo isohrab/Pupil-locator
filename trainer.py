@@ -84,20 +84,18 @@ def main(model_type, model_name, logger):
             train_batches = train_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["image_channel"],
-                                                    zero_mean=True,
-                                                    normalize_output=True)
+                                                    zero_mean=True)
             valid_batches = valid_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["image_channel"],
-                                                    zero_mean=True,
-                                                    normalize_output=True)
+                                                    zero_mean=True)
 
             # check if learning rate set correctly
             # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
 
             while model.global_step.eval() < config["total_steps"]:
 
-                lr = config["learning_rate"][int(config["decay_step"] / config["total_steps"])]
+                lr = config["learning_rate"][int(model.global_step.eval() / config["decay_step"])]
                 with tqdm(total=config["validate_every"], unit="batches") as t:
                     for x, y, _ in train_batches:
                         if x is None:

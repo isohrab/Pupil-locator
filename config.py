@@ -1,8 +1,8 @@
 config = dict()
 config["batch_size"] = 32
-config["total_steps"] = 200000
-config["validate_every"] = 500
-config["validate_for"] = 100
+config["total_steps"] = 400000
+config["validate_every"] = 4000
+config["validate_for"] = 1400
 config["save_every"] = 3 * config["validate_every"]
 
 config["n_filters"] =    [16, 32, 128, 128, 256, 256]
@@ -35,7 +35,7 @@ config["prob_reflection"] = 0.65
 config["min_reflection"] = 0.35
 config["max_reflection"] = 0.85
 
-config["prob_blur"] = 0.5
+config["prob_blur"] = 0.25
 config["min_blurSize"] = 3
 config["max_blurSize"] = 9
 config["min_sigmaRatio"] = 0.25

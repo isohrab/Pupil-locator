@@ -156,7 +156,6 @@ def video_creator(video_name, images, labels, fps=15):
     for img, lbl in zip(images, labels):
         img = np.squeeze(img)
         img = u.gray_denormalizer(img)
-        lbl = u.label_denormalizer(img.shape, *lbl)
         annotated_img = u.annotator(img, *lbl)
         video.write(annotated_img)
 
@@ -177,13 +176,18 @@ def print_resutls(errors_dic, pixels_list):
     def row_writer(title, errors_list):
         row = title + ": "
         for val in errors_list:
-            row += " {:2.1f}\t".format(val)
+            row += " {:2.2f}\t".format(val*100)
 
         return row
 
-    print(header)
     for key in sorted(errors_dic.keys()):
         print(row_writer(key, errors_dic[key]))
+
+    # print average error
+    errors = [val for key, val in errors_dic.items()]
+    errors = np.asarray(errors, dtype=np.float32)
+    avg = np.mean(errors, axis=0)
+    print(row_writer("average error", avg))
 
 
 def main(m_type, m_name, logger):
@@ -230,8 +234,8 @@ def main(m_type, m_name, logger):
                     h = images[0].shape[0]
 
                     # calculate the difference
-                    a = (predictions[:, 0]*w) - truths[:, 0]
-                    b = (predictions[:, 1]*h) - truths[:, 1]
+                    a = predictions[:, 0] - truths[:, 0]
+                    b = predictions[:, 1] - truths[:, 1]
 
                     diff = np.sqrt((a * a + b * b))
 
@@ -243,7 +247,7 @@ def main(m_type, m_name, logger):
                     pred_labels.extend(predictions)
 
                 # create the predicted labels on test sets
-                video_creator(dataset_name, test_images, pred_labels)
+                # video_creator(dataset_name, test_images, pred_labels)
 
     # print the result for different pixel error
     pixel_errors = [1, 2, 3, 4, 5, 7, 10, 15, 20]

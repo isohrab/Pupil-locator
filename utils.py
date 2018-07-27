@@ -33,7 +33,7 @@ def ri(low, high):
     return np.random.randint(low, high)
 
 
-def annotator(img, x, y, w=10, h=10):
+def annotator(img, x, y, w=10, h=None):
     """
     draw a circle around predicted pupil
     :param img: input frame
@@ -62,9 +62,13 @@ def annotator(img, x, y, w=10, h=10):
     # rgb = cv2.line(rgb, (l1xs, l1ys), (l1xe, l1ye), (255, 255, 0), 1)
     # rgb = cv2.line(rgb, (l2xs, l2ys), (l2xe, l2ye), (255, 255, 0), 1)
 
+    # We predict only width!
+    if h is None:
+        h = w
+
     # draw ellipse
     color = (0, 250, 250)
-    rgb = cv2.ellipse(rgb, ((x, y), (w, h), 0), color, 1)
+    rgb = cv2.ellipse(rgb, ((x, y), (0, 0), 0), color, 1)
 
     return rgb
 
@@ -203,59 +207,3 @@ def gray_denormalizer(gray):
 
     return out_gray
 
-def label_normalizer(shape, x, y, w=None, h=None):
-    """
-    Get a label and normalize it to 0-1 based on the image shape
-    :param x: x center pupil
-    :param y: y center pupil
-    :param w: width of pupil
-    :param h: height of pupil
-    :param shape: shape of image
-    :return: list of [x, y, w, y]
-    """
-    label = []
-    img_h, img_w = shape
-    x_out = x / img_w
-    label.append(x_out)
-
-    y_out = y / img_h
-    label.append(y_out)
-
-    if w is not None:
-        w_out = w / img_w
-        label.append(w_out)
-
-    if h is not None:
-        h_out = h / img_h
-        label.append(h_out)
-
-    return label
-
-
-def label_denormalizer(shape, x, y, w=None, h=None):
-    """
-    Get a label and denormalize it based on the image shape
-    :param x: x center pupil
-    :param y: y center pupil
-    :param w: width of pupil
-    :param h: height of pupil
-    :param shape: shape of image
-    :return: list of [x, y, w, y]
-    """
-    label = []
-    img_h, img_w = shape
-    x_out = x * img_w
-    label.append(x_out)
-
-    y_out = y * img_h
-    label.append(y_out)
-
-    if w is not None:
-        w_out = w * img_w
-        label.append(w_out)
-
-    if h is not None:
-        h_out = h * img_h
-        label.append(h_out)
-
-    return label

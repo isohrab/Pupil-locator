@@ -200,7 +200,7 @@ class Augmentor(object):
         c_img = self.addReflection(c_img)
         # c_img = self.addOcclusion(c_img, c_label)
         # c_img = self.addExposure(c_img)
-        c_img = self.addBlur(c_img)
+        # c_img = self.addBlur(c_img)
         return c_img, c_label
 
 

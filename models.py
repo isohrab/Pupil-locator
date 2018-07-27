@@ -341,6 +341,7 @@ class Inception(BaseModel):
 
     def __init__(self, model_name, cfg, logger):
         super(Inception, self).__init__(model_name, cfg, logger)
+        self.m = 0.5
         self.logger.log("building the model...")
         self.init_placeholders()
         self.init_forward()
@@ -359,7 +360,7 @@ class Inception(BaseModel):
             # Branch 0, 1x1
             with tf.variable_scope("branch_0"):
                 branch_0 = tf.layers.conv2d(inputs=net,
-                                            filters=96,
+                                            filters=96*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -372,7 +373,7 @@ class Inception(BaseModel):
             # Branch 1: 1x1 + 3x3
             with tf.variable_scope("branch_1"):
                 branch_1 = tf.layers.conv2d(inputs=net,
-                                            filters=64,
+                                            filters=64*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -382,7 +383,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=96,
+                                            filters=96*self.m,
                                             kernel_size=(3, 3),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -394,7 +395,7 @@ class Inception(BaseModel):
             # Branch 2: 1x1 + 3x3 + 3x3
             with tf.variable_scope("branch_2"):
                 branch_2 = tf.layers.conv2d(inputs=net,
-                                            filters=64,
+                                            filters=64*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -404,7 +405,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=96,
+                                            filters=96*self.m,
                                             kernel_size=(3, 3),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -414,7 +415,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=96,
+                                            filters=96*self.m,
                                             kernel_size=(3, 3),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -432,7 +433,7 @@ class Inception(BaseModel):
                                                        name="AvgPool_3a_3x3")
 
                 branch_3 = tf.layers.conv2d(inputs=branch_3,
-                                            filters=96,
+                                            filters=96*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -450,7 +451,7 @@ class Inception(BaseModel):
             # Branch 0, 3x3(V2)
             with tf.variable_scope("branch_0"):
                 branch_0 = tf.layers.conv2d(inputs=net,
-                                            filters=384,
+                                            filters=384*self.m,
                                             kernel_size=(3, 3),
                                             strides=(2, 2),
                                             padding='VALID',
@@ -463,7 +464,7 @@ class Inception(BaseModel):
             # Branch 1: 1x1 + 3x3 + 3x3V2
             with tf.variable_scope("branch_1"):
                 branch_1 = tf.layers.conv2d(inputs=net,
-                                            filters=192,
+                                            filters=192*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding='SAME',
@@ -474,7 +475,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=224,
+                                            filters=224*self.m,
                                             kernel_size=(3, 3),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -484,7 +485,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=256,
+                                            filters=256*self.m,
                                             kernel_size=(3, 3),
                                             strides=(2, 2),
                                             padding="VALID",
@@ -510,7 +511,7 @@ class Inception(BaseModel):
             # Branch 0: 1x1
             with tf.variable_scope("branch_0"):
                 branch_0 = tf.layers.conv2d(inputs=net,
-                                            filters=384,
+                                            filters=384*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -522,7 +523,7 @@ class Inception(BaseModel):
             # branch 1: 1x1 + 1x7 + 7x1
             with tf.variable_scope("branch_1"):
                 branch_1 = tf.layers.conv2d(inputs=net,
-                                            filters=192,
+                                            filters=192*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -532,7 +533,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=224,
+                                            filters=224*self.m,
                                             kernel_size=(1, 7),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -542,7 +543,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=256,
+                                            filters=256*self.m,
                                             kernel_size=(7, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -554,7 +555,7 @@ class Inception(BaseModel):
             # branch 2: 1x1 + 1x7 + 7x1 + 1x7 + 7x1
             with tf.variable_scope("branch_2"):
                 branch_2 = tf.layers.conv2d(inputs=net,
-                                            filters=192,
+                                            filters=192*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -564,7 +565,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=192,
+                                            filters=192*self.m,
                                             kernel_size=(1, 7),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -574,7 +575,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=224,
+                                            filters=224*self.m,
                                             kernel_size=(7, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -584,7 +585,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=224,
+                                            filters=224*self.m,
                                             kernel_size=(1, 7),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -594,7 +595,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=256,
+                                            filters=256*self.m,
                                             kernel_size=(7, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -612,7 +613,7 @@ class Inception(BaseModel):
                                                        name="AvgPool_3a_3x3")
 
                 branch_3 = tf.layers.conv2d(inputs=branch_3,
-                                            filters=128,
+                                            filters=128*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -630,7 +631,7 @@ class Inception(BaseModel):
             # Branch 0: 1x1 + 3x3(V,2)
             with tf.variable_scope("branch_0"):
                 branch_0 = tf.layers.conv2d(inputs=net,
-                                            filters=192,
+                                            filters=192*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -640,7 +641,7 @@ class Inception(BaseModel):
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
                 branch_0 = tf.layers.conv2d(inputs=branch_0,
-                                            filters=192,
+                                            filters=192*self.m,
                                             kernel_size=(3, 3),
                                             strides=(2, 2),
                                             padding="VALID",
@@ -652,7 +653,7 @@ class Inception(BaseModel):
             # Branch 1: 1x1 + 1x7 + 7x1 + 3x3(V,2)
             with tf.variable_scope("branch_1"):
                 branch_1 = tf.layers.conv2d(inputs=net,
-                                            filters=256,
+                                            filters=256*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -662,7 +663,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=256,
+                                            filters=256*self.m,
                                             kernel_size=(1, 7),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -672,7 +673,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=320,
+                                            filters=320*self.m,
                                             kernel_size=(7, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -682,7 +683,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                            filters=320,
+                                            filters=320*self.m,
                                             kernel_size=(3, 3),
                                             strides=(2, 2),
                                             padding="VALID",
@@ -708,7 +709,7 @@ class Inception(BaseModel):
             # Branch 0: 1x1
             with tf.variable_scope("branch_0"):
                 branch_0 = tf.layers.conv2d(inputs=net,
-                                            filters=256,
+                                            filters=256*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -720,7 +721,7 @@ class Inception(BaseModel):
             # Branch 1: 1x1 {1x3, 3x1}
             with tf.variable_scope("branch_1"):
                 branch_1 = tf.layers.conv2d(inputs=net,
-                                            filters=384,
+                                            filters=384*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -730,7 +731,7 @@ class Inception(BaseModel):
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
                 branch_1a = tf.layers.conv2d(inputs=branch_1,
-                                             filters=256,
+                                             filters=256*self.m,
                                              kernel_size=(1, 3),
                                              strides=(1, 1),
                                              padding="SAME",
@@ -740,7 +741,7 @@ class Inception(BaseModel):
                 branch_1a = self.bn_lrelu(branch_1a, is_training)
 
                 branch_1b = tf.layers.conv2d(inputs=branch_1,
-                                             filters=256,
+                                             filters=256*self.m,
                                              kernel_size=(3, 1),
                                              strides=(1, 1),
                                              padding="SAME",
@@ -754,7 +755,7 @@ class Inception(BaseModel):
             # Branch 2: 1x1, 3x1, 1x3 {3x1, 1x3}
             with tf.variable_scope("branch_2"):
                 branch_2 = tf.layers.conv2d(inputs=net,
-                                            filters=384,
+                                            filters=384*self.m,
                                             kernel_size=(1, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -764,7 +765,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=448,
+                                            filters=448*self.m,
                                             kernel_size=(1, 3),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -774,7 +775,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2 = tf.layers.conv2d(inputs=branch_2,
-                                            filters=512,
+                                            filters=512*self.m,
                                             kernel_size=(3, 1),
                                             strides=(1, 1),
                                             padding="SAME",
@@ -784,7 +785,7 @@ class Inception(BaseModel):
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
                 branch_2a = tf.layers.conv2d(inputs=branch_2,
-                                             filters=256,
+                                             filters=256*self.m,
                                              kernel_size=(1, 3),
                                              strides=(1, 1),
                                              padding="SAME",
@@ -794,7 +795,7 @@ class Inception(BaseModel):
                 branch_2a = self.bn_lrelu(branch_2a, is_training)
 
                 branch_2b = tf.layers.conv2d(inputs=branch_2,
-                                             filters=256,
+                                             filters=256*self.m,
                                              kernel_size=(3, 1),
                                              strides=(1, 1),
                                              padding="SAME",
@@ -813,7 +814,7 @@ class Inception(BaseModel):
                                                        padding="SAME",
                                                        name="AvgPool_3a_3x3")
                 branch_3 = tf.layers.conv2d(inputs=branch_3,
-                                            filters=256,
+                                            filters=256*self.m,
                                             kernel_size=(1, 1),
                                             padding="SAME",
                                             # kernel_regularizer=l2_regularizer(self.l2beta),
@@ -831,7 +832,7 @@ class Inception(BaseModel):
         # Begin Inception Model
         with tf.variable_scope(name_or_scope="InceptionV4"):
             net = tf.layers.conv2d(inputs=net,
-                                   filters=32,
+                                   filters=32*self.m,
                                    kernel_size=(3, 3),
                                    strides=(2, 2),
                                    padding="VALID",
@@ -842,7 +843,7 @@ class Inception(BaseModel):
             self.logger.log("stem0 shape {}".format(net.get_shape()))
 
             net = tf.layers.conv2d(inputs=net,
-                                   filters=32,
+                                   filters=32*self.m,
                                    kernel_size=(3, 3),
                                    strides=(1, 1),
                                    padding="VALID",
@@ -853,7 +854,7 @@ class Inception(BaseModel):
             self.logger.log("stem1 shape {}".format(net.get_shape()))
 
             net = tf.layers.conv2d(inputs=net,
-                                   filters=64,
+                                   filters=64*self.m,
                                    kernel_size=(3, 3),
                                    strides=(1, 1),
                                    padding="SAME",
@@ -866,7 +867,7 @@ class Inception(BaseModel):
             with tf.variable_scope("Mixed_3a"):
                 with tf.variable_scope("branch_0"):
                     net_a = tf.layers.conv2d(inputs=net,
-                                             filters=96,
+                                             filters=96*self.m,
                                              kernel_size=(3, 3),
                                              strides=(2, 2),
                                              padding="VALID",
@@ -889,7 +890,7 @@ class Inception(BaseModel):
                 # Branch 0: 1x1, 7x1, 1x7, 3x3v
                 with tf.variable_scope("branch_0"):
                     branch_0 = tf.layers.conv2d(inputs=net,
-                                                filters=64,
+                                                filters=64*self.m,
                                                 kernel_size=(1, 1),
                                                 strides=(1, 1),
                                                 padding="SAME",
@@ -899,7 +900,7 @@ class Inception(BaseModel):
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
                     branch_0 = tf.layers.conv2d(inputs=branch_0,
-                                                filters=64,
+                                                filters=64*self.m,
                                                 kernel_size=(7, 1),
                                                 strides=(1, 1),
                                                 padding="SAME",
@@ -909,7 +910,7 @@ class Inception(BaseModel):
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
                     branch_0 = tf.layers.conv2d(inputs=branch_0,
-                                                filters=64,
+                                                filters=64*self.m,
                                                 kernel_size=(1, 7),
                                                 strides=(1, 1),
                                                 padding="SAME",
@@ -919,7 +920,7 @@ class Inception(BaseModel):
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
                     branch_0 = tf.layers.conv2d(inputs=branch_0,
-                                                filters=96,
+                                                filters=96*self.m,
                                                 kernel_size=(3, 3),
                                                 strides=(1, 1),
                                                 padding="VALID",
@@ -931,7 +932,7 @@ class Inception(BaseModel):
                 # Branch 1: 1x1, 3x3v
                 with tf.variable_scope("branch_1"):
                     branch_1 = tf.layers.conv2d(inputs=net,
-                                                filters=64,
+                                                filters=64*self.m,
                                                 kernel_size=(1, 1),
                                                 strides=(1, 1),
                                                 padding="SAME",
@@ -941,7 +942,7 @@ class Inception(BaseModel):
                     branch_1 = self.bn_lrelu(branch_1, self.train_flag)
 
                     branch_1 = tf.layers.conv2d(inputs=branch_1,
-                                                filters=96,
+                                                filters=96*self.m,
                                                 kernel_size=(3, 3),
                                                 strides=(1, 1),
                                                 padding="VALID",
@@ -957,7 +958,7 @@ class Inception(BaseModel):
                 # Branch 0: 3x3
                 with tf.variable_scope("branch_0"):
                     branch_0 = tf.layers.conv2d(inputs=net,
-                                                filters=192,
+                                                filters=192*self.m,
                                                 kernel_size=(3, 3),
                                                 strides=(2, 2),
                                                 padding="VALID",

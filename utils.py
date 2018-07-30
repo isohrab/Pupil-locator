@@ -68,7 +68,7 @@ def annotator(img, x, y, w=10, h=None):
 
     # draw ellipse
     color = (0, 250, 250)
-    rgb = cv2.ellipse(rgb, ((x, y), (0, 0), 0), color, 1)
+    rgb = cv2.ellipse(rgb, ((x, y), (w, h), 0), color, 1)
 
     return rgb
 

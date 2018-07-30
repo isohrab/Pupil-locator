@@ -31,7 +31,7 @@ config["prob_downscale"] = 0.5
 config["max_downscale"] = 0.7
 config["min_downscale"] = 0.9
 
-config["prob_reflection"] = 0.65
+config["prob_reflection"] = 0.75
 config["min_reflection"] = 0.35
 config["max_reflection"] = 0.85
 
@@ -50,6 +50,14 @@ config["occlusion_max_obj"] = 6
 config["prob_exposure"] = 0.75
 config["min_exposure"] = 1.2
 config["max_exposure"] = 1.8
+
+# crop input image
+config["crop_probability"] = 0.75
+config["crop_min_ratio"] = 0.5
+config["crop_max_ratio"] = 0.9
+
+# flip image
+config["flip_probability"] = 0.5
 
 # L2 regularization
 config["l2_beta"] = 0.01

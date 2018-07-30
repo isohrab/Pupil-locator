@@ -44,15 +44,10 @@ class Augmentor(object):
                     self.frames.append(frame)
 
             cap.release()
-        # make noises stronger by adding exposure to them
-        exposured_frames = []
-        for frame in self.frames:
-            exp_frame = self.addExposure(frame)
-            exposured_frames.append(exp_frame)
-
-        self.frames = exposured_frames
+            break
 
         print("In total {} frames loaded".format(len(self.frames)))
+
 
     def downscale(self, img, label):
         """
@@ -91,9 +86,10 @@ class Augmentor(object):
         update_label[0] = label[0] * s + cOffset
         update_label[1] = label[1] * s + rOffset
         update_label[2] = label[2] * s
-        update_label[3] = label[3] * s
+
 
         return z, update_label
+
 
     def addReflection(self, in_img):
         """
@@ -109,10 +105,14 @@ class Augmentor(object):
         idx = ri(0, len(self.frames))
         ref = self.frames[idx]
 
+        # add exposure to the frame
+        ref = self.addExposure(ref)
+
         # choose a random weight
         w = rf(self.cfg["min_reflection"], self.cfg["max_reflection"])
         res = in_img + w * (255.0 - in_img) * (ref / 255.0)
         return res
+
 
     def addBlur(self, in_img):
         """
@@ -128,6 +128,7 @@ class Augmentor(object):
             ksize = ksize + 1
         sigma = rf(self.cfg["min_sigmaRatio"], self.cfg["max_sigmaRatio"])
         return cv2.GaussianBlur(in_img, (ksize, ksize), sigma)
+
 
     def addOcclusion(self, in_img, in_label):
         """
@@ -169,6 +170,7 @@ class Augmentor(object):
 
         return in_img
 
+
     def addExposure(self, in_img):
         """
         Add exposure to image
@@ -184,6 +186,105 @@ class Augmentor(object):
         in_img = np.asarray(in_img, dtype=np.uint8)
         return in_img
 
+
+    def crop_it(self, img, lbl, max_attemps=100):
+        """
+        crop the input image with a random location and size.
+        :param img: input size
+        :param label: location of pupil
+        :return: cropped image + new label based on crop
+        """
+        if config["crop_probability"] < rf(0, 1):
+            return img, lbl
+
+        # get the shape of image
+        h, w = img.shape
+
+        # get the labels
+        lx = lbl[0]
+        ly = lbl[1]
+        lw = lbl[2]
+
+        # find pupil upper right corner and bottom left corner to check if
+        # it is in the cropped image or not, we consider pupil is circle and use only width
+        px1 = lx - lw/2
+        py1 = ly - lw/2
+        px2 = lx + lw/2
+        py2 = ly + lw/2
+        # check if pupil location is not outside of the image
+        px1, py1, px2, py2 = np.clip([px1, py1, px2, py2], 0, 192)
+
+        attemps = 0
+        while attemps < max_attemps:
+            # create a random size
+            crop_size = int(rf(config["crop_min_ratio"], config["crop_max_ratio"]) * w)
+            cx1 = ri(0, w - crop_size)
+            cy1 = ri(0, w - crop_size)
+            cx2 = cx1 + crop_size
+            cy2 = cy1 + crop_size
+
+            if px1<cx1 or px1>cx2:
+                attemps +=1
+                continue
+
+            if px2<cx1 or px2>cx2:
+                attemps += 1
+                continue
+
+            if py1<cy1 or py1>cy2:
+                attemps += 1
+                continue
+
+            if py2<cy1 or py2>cy2:
+                attemps += 1
+                continue
+
+            # if we are here, it means we found a crop box
+            # slice the image
+            image = img[cy1:cy1+crop_size, cx1:cx1+crop_size]
+
+            # update the label for crop
+            lx = lx - cx1
+            ly = ly - cy1
+
+            # resize (upscale) the new image to 192, 192
+            s = w/crop_size
+            image = cv2.resize(image, dsize=(h, w))
+
+
+
+            # update label for up-scaling
+            lx = lx * s
+            ly = ly * s
+            lw = lw * s
+
+            return image, [lx, ly, lw]
+
+        # if we are here, no crop applied
+        return img, lbl
+
+
+    def flip_it(self, img, lbl):
+        """
+        flip an image right to left
+        :param img: input image
+        :param lbl: input label
+        :return: flipped image + altered label
+        """
+        # if config["flip_probability"] < rf(0, 1):
+        #     return img, lbl
+
+        h, w = img.shape
+        img = cv2.flip(img, 1)
+
+        # update the label
+        lx = w - lbl[0]
+        ly = lbl[1]
+        lw = lbl[2]
+
+        return img, [lx, ly, lw]
+
+
     def addNoise(self, in_img, in_label):
         """
         Add all possible noise to the image
@@ -196,7 +297,9 @@ class Augmentor(object):
         c_label = np.array(in_label, copy=True)
 
         # apply noise
-        c_img, c_label = self.downscale(c_img, c_label)
+        c_img, c_label = self.flip_it(c_img, c_label)
+        c_img, c_label = self.crop_it(c_img, c_label)
+        # c_img, c_label = self.downscale(c_img, c_label)
         c_img = self.addReflection(c_img)
         # c_img = self.addOcclusion(c_img, c_label)
         # c_img = self.addExposure(c_img)
@@ -216,13 +319,19 @@ if __name__ == "__main__":
     a = np.round(np.float32(e[4].text))
     true_label = [x, y, w, h]
 
-    ag = Augmentor('noisy_videos/', config)
+    ag = Augmentor('data/noisy_videos/', config)
     scaled_img, scaled_label = ag.addNoise(img, true_label)
 
-    pil_img = Image.fromarray(annotator(scaled_img, scaled_label))
+    pil_img = Image.fromarray(annotator(scaled_img, *scaled_label))
     pil_img.show()
 
-    pil_img = Image.fromarray(annotator(img, true_label))
+    pil_img = Image.fromarray(annotator(img, *true_label))
     pil_img.show()
     print("true label {}".format(true_label))
     print("scaled label {}".format(scaled_label))
+
+    # ag = Augmentor('data/noisy_videos/', config)
+    #
+    # img = np.random.randint(0,255, size=(20,20), dtype=np.uint8)
+    # label = [8, 14, 3]
+    # img, lbl = ag.crop_it(img, label)

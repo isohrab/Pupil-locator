@@ -94,8 +94,9 @@ def main(model_type, model_name, logger):
             # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
 
             while model.global_step.eval() < config["total_steps"]:
-
-                lr = config["learning_rate"][int(model.global_step.eval() / config["decay_step"])]
+                lr_idx = int(model.global_step.eval() / config["decay_step"])
+                lr_idx = min(lr_idx, len(config["learning_rate"])-1)
+                lr = config["learning_rate"][lr_idx]
                 with tqdm(total=config["validate_every"], unit="batches") as t:
                     for x, y, _ in train_batches:
                         if x is None:

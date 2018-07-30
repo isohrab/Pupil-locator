@@ -116,7 +116,7 @@ def read_batch(csv_path, b_size, d_name):
 
             # read the image
             image_name = real_image_name(values[1])
-            img = cv2.imread("emma_data/{}/{}.png".format(d_name, image_name), cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread("data/emma_data/{}/{}.png".format(d_name, image_name), cv2.IMREAD_GRAYSCALE)
 
             # read and convert the labels
             x = int(values[2]) / 2
@@ -167,6 +167,35 @@ def video_creator(video_name, images, labels, fps=15):
 def print_resutls(errors_dic, pixels_list):
     # sort the dataset errors to have a uniform results
     # generate the header
+    dataset_names = ["data set I",
+                     "data set II",
+                     "data set III",
+                     "data set IV",
+                     "data set V",
+                     "data set VI",
+                     "data set VII",
+                     "data set VIII",
+                     "data set IX",
+                     "data set X",
+                     "data set XI",
+                     "data set XII",
+                     "data set XIII",
+                     "data set XIV",
+                     "data set XV",
+                     "data set XVI",
+                     "data set XVII",
+                     "data set XVIII",
+                     "data set XIX",
+                     "data set XX",
+                     "data set XXI",
+                     "data set XXII",
+                     "data set XXIII",
+                     "data set XXIV",
+                     "PupilNet I",
+                     "PupilNet II",
+                     "PupilNet III",
+                     "PupilNet IV",
+                     "PupilNet V"]
     header = "Dataset name: "
     for p in pixels_list:
         header += str(p) + "\t\t"
@@ -180,8 +209,8 @@ def print_resutls(errors_dic, pixels_list):
 
         return row
 
-    for key in sorted(errors_dic.keys()):
-        print(row_writer(key, errors_dic[key]))
+    for name in dataset_names:
+        print(row_writer(name, errors_dic[name]))
 
     # print average error
     errors = [val for key, val in errors_dic.items()]
@@ -197,7 +226,7 @@ def main(m_type, m_name, logger):
         model = load_model(sess, m_type, m_name, logger)
 
         # get the csv files
-        datasets = glob.glob('emma_data/*.txt')
+        datasets = glob.glob('data/emma_data/*.txt')
         datasets = sorted(datasets)
 
         # we save the results of all dataset in to this list

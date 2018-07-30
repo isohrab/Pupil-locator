@@ -5,7 +5,7 @@ import argparse
 import cv2
 import numpy as np
 from config import config
-from utils import annotator, change_channel, gray_normalizer, label_denormalizer
+from utils import annotator, change_channel, gray_normalizer
 from Logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from augmentor import Augmentor
@@ -75,9 +75,8 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 image = gray_normalizer(gray)
                 image = change_channel(image, config["image_channel"])
-                p = model.predict(sess, [image])
-                label = label_denormalizer(gray.shape, *p[0])
-                preds.append(label)
+                [p] = model.predict(sess, [image])
+                preds.append(p)
                 frames.append(gray)
                 counter += 1
 
@@ -93,7 +92,7 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
         for i, img in enumerate(frames):
             loc = beta * loc + (1-beta) * preds[i]
             # if (i+1) % 2 == 0:
-            labeled_img = annotator(img, preds[i])
+            labeled_img = annotator(img, *preds[i])
             video.write(labeled_img)
 
         # close the video
@@ -122,9 +121,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "Inception_test"
+    model_name = "NAS_Conv_F"
     model_type = args.model_type
-    model_type = "INC"
+    model_type = "NAS"
     video_input = args.video_input
 
     logger = Logger(model_type, model_name, "", config, dir="models/")
@@ -133,5 +132,5 @@ if __name__ == "__main__":
     # create a dummy video
     # ag = Augmentor('noisy_videos', config)
     # video_input = create_noisy_video(length=60, fps=5, augmentor=ag)
-    video_input = "test_videos/5.mp4"
+    video_input = "data/test_videos/6.mp4"
     main(model_type, model_name, logger, video_input)

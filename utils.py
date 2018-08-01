@@ -44,10 +44,7 @@ def annotator(img, x, y, w=10, h=None):
     :return: an image with a circle around the pupil
     """
     w_img, h_img = img.shape
-    rgb = np.zeros(shape=(w_img, h_img, 3), dtype=np.uint8)
-    rgb[:, :, 0] = img  # TODO: a better way!
-    rgb[:, :, 1] = img
-    rgb[:, :, 2] = img
+    rgb = np.concatenate((img, img, img), axis=2)
 
     # l1xs = int(label[0] - label[2] / 2)
     # l1ys = int(label[1])

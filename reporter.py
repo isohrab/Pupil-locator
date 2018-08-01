@@ -235,7 +235,7 @@ def main(m_type, m_name, logger):
         for d in datasets:
 
             # get the name of dataset from the path
-            dataset_name = d.split("/")[1].split(".")[0]
+            dataset_name = d.split("/")[2].split(".")[0]
 
             # save the result (differences) in the list
             dataset_results[dataset_name] = []

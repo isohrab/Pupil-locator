@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+from tensorflow.python.ops import control_flow_ops
 
 # YOLO implementation
 # https://github.com/WojciechMormul/yolo2/blob/master/train.py
@@ -48,26 +48,28 @@ class BaseModel(object):
 
     def init_optimizer(self):
         print("setting optimizer..")
+        self.l2_loss = tf.losses.get_regularization_loss()
+        tf.summary.scalar("l2_loss", self.l2_loss)
+
+        self.total_loss = tf.add(self.loss, self.l2_loss)
+        tf.summary.scalar('final_loss', self.total_loss)
+
+
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        if update_ops:
+            updates = tf.group(*update_ops)
+            self.final_loss = control_flow_ops.with_dependencies([updates], self.total_loss)
+
         with tf.control_dependencies(update_ops):
             trainable_params = tf.trainable_variables()
 
-            opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
-
-            # # add l2 loss
-            # self.l2_loss = 0
-            # for v in trainable_params:
-            #     if 'kernel' in v.name:
-            #         self.l2_loss += self.cfg["l2_beta"] * tf.nn.l2_loss(v)
-            #
-            # tf.summary.scalar("l2_loss", self.l2_loss)
-            # # #
-            # final_loss = self.loss + self.l2_loss
-            # # Training summary for the current batch_loss
-            # tf.summary.scalar('final_loss', final_loss)
+            opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate,
+                                            decay=0.9,
+                                            momentum=0.9,
+                                            epsilon=1.0)
 
             # Compute gradients of loss w.r.t. all trainable variables
-            gradients = tf.gradients(self.loss, trainable_params)
+            gradients = tf.gradients(self.final_loss, trainable_params)
 
             # Clip gradients by a given maximum_gradient_norm
             clip_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)

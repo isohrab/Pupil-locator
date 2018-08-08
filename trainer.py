@@ -2,7 +2,7 @@ import tensorflow as tf
 import argparse
 from models import Simple, NASNET, Inception, GAP, YOLO
 from config import config
-from Batchizer import Batchizer
+from batchizer import Batchizer
 from tqdm import tqdm
 from utils import *
 from Logger import Logger
@@ -45,10 +45,10 @@ def print_predictions(result, logger):
         img_path = r[2]
 
         logger.log("Path: " + img_path)
-        logger.log("truth: {0:2.4f} {1:2.4f} {2:2.4f}".format(y[0],
+        logger.log("truth: {0:2.2f} {1:2.2f} {2:2.2f}".format(y[0],
                                                               y[1],
                                                               y[2]))
-        logger.log("pred : {0:2.4f} {1:2.4f} {2:2.4f}\n".format(pred[0],
+        logger.log("pred : {0:2.2f} {1:2.2f} {2:2.2f}\n".format(pred[0],
                                                                 pred[1],
                                                                 pred[2]))
 
@@ -80,7 +80,7 @@ def main(model_type, model_name, logger):
             valid_batchizer = Batchizer(valid_path, config["batch_size"])
 # TODO: move arguments to class initializer
             # init augmentor
-            ag = Augmentor('noisy_videos/', config)
+            ag = Augmentor('data/noisy_videos/', config)
             train_batches = train_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["image_channel"],
@@ -97,7 +97,7 @@ def main(model_type, model_name, logger):
                 lr_idx = int(model.global_step.eval() / config["decay_step"])
                 lr_idx = min(lr_idx, len(config["learning_rate"])-1)
                 lr = config["learning_rate"][lr_idx]
-                with tqdm(total=config["validate_every"], unit="batches") as t:
+                with tqdm(total=config["validate_every"], unit="batch") as t:
                     for x, y, _ in train_batches:
                         if x is None:
                             continue
@@ -114,7 +114,7 @@ def main(model_type, model_name, logger):
 
                 valid_counter = 0
                 pred_result = []
-                with tqdm(total=config["validate_for"], unit="batches") as t:
+                with tqdm(total=config["validate_for"], unit="batch") as t:
                     for x, y, img in valid_batches:
                         if x is None:
                             continue
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     model_name = "Inception_test"
     model_type = "INC"
-    model_comment = "Inception without l2"
+    model_comment = "Inception with l2"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")

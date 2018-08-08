@@ -1,9 +1,8 @@
-from utils import rf, ri, annotator
 import os
 import numpy as np
-from PIL import Image
 from config import config
 from xml.etree import ElementTree
+from utils import rf, ri, create_noisy_video
 import cv2
 
 
@@ -44,7 +43,6 @@ class Augmentor(object):
                     self.frames.append(frame)
 
             cap.release()
-            break
 
         print("In total {} frames loaded".format(len(self.frames)))
 
@@ -111,7 +109,7 @@ class Augmentor(object):
         # choose a random weight
         w = rf(self.cfg["min_reflection"], self.cfg["max_reflection"])
         res = in_img + w * (255.0 - in_img) * (ref / 255.0)
-        return res
+        return np.asarray(res, dtype=np.uint8)
 
 
     def addBlur(self, in_img):
@@ -297,38 +295,35 @@ class Augmentor(object):
         c_label = np.array(in_label, copy=True)
 
         # apply noise
+        c_img, c_label = self.downscale(c_img, c_label)
         c_img, c_label = self.flip_it(c_img, c_label)
         c_img, c_label = self.crop_it(c_img, c_label)
-        # c_img, c_label = self.downscale(c_img, c_label)
         c_img = self.addReflection(c_img)
-        # c_img = self.addOcclusion(c_img, c_label)
-        # c_img = self.addExposure(c_img)
-        # c_img = self.addBlur(c_img)
+
         return c_img, c_label
 
-
 if __name__ == "__main__":
-    image_fn = "0in.jpg"
-    img = cv2.imread(image_fn, 0)
-    xml_path = "0gt.xml"
-    e = ElementTree.parse(xml_path).getroot()
-    x = np.round(np.float32(e[0].text))
-    y = np.round(np.float32(e[1].text))
-    w = np.round(np.float32(e[2].text))
-    h = np.round(np.float32(e[3].text))
-    a = np.round(np.float32(e[4].text))
-    true_label = [x, y, w, h]
+    # image_fn = "0in.jpg"
+    # img = cv2.imread(image_fn, 0)
+    # xml_path = "0gt.xml"
+    # e = ElementTree.parse(xml_path).getroot()
+    # x = np.round(np.float32(e[0].text))
+    # y = np.round(np.float32(e[1].text))
+    # w = np.round(np.float32(e[2].text))
+    # h = np.round(np.float32(e[3].text))
+    # a = np.round(np.float32(e[4].text))
+    # true_label = [x, y, w, h]
 
     ag = Augmentor('data/noisy_videos/', config)
-    scaled_img, scaled_label = ag.addNoise(img, true_label)
+    create_noisy_video(with_label=True, augmentor=ag)
 
-    pil_img = Image.fromarray(annotator(scaled_img, *scaled_label))
-    pil_img.show()
-
-    pil_img = Image.fromarray(annotator(img, *true_label))
-    pil_img.show()
-    print("true label {}".format(true_label))
-    print("scaled label {}".format(scaled_label))
+    # pil_img = Image.fromarray(annotator(scaled_img, *scaled_label))
+    # pil_img.show()
+    #
+    # pil_img = Image.fromarray(annotator(img, *true_label))
+    # pil_img.show()
+    # print("true label {}".format(true_label))
+    # print("scaled label {}".format(scaled_label))
 
     # ag = Augmentor('data/noisy_videos/', config)
     #

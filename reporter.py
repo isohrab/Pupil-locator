@@ -1,15 +1,44 @@
 import os
 import tensorflow as tf
-import time
 import argparse
 import glob
 import cv2
 from tqdm import tqdm
 import numpy as np
 from config import config
-import utils as u
+from utils import gray_normalizer, annotator, gray_denormalizer, change_channel
 from Logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
+
+dataset_names = ["data set I",
+                 "data set II",
+                 "data set III",
+                 "data set IV",
+                 "data set V",
+                 "data set VI",
+                 "data set VII",
+                 "data set VIII",
+                 "data set IX",
+                 "data set X",
+                 "data set XI",
+                 "data set XII",
+                 "data set XIII",
+                 "data set XIV",
+                 "data set XV",
+                 "data set XVI",
+                 "data set XVII",
+                 "data set XVIII",
+                 "data set XIX",
+                 "data set XX",
+                 "data set XXI",
+                 "data set XXII",
+                 "data set XXIII",
+                 "data set XXIV",
+                 "PupilNet I",
+                 "PupilNet II",
+                 "PupilNet III",
+                 "PupilNet IV",
+                 "PupilNet V"]
 
 
 def load_model(session, m_type, m_name, logger):
@@ -46,6 +75,115 @@ def load_model(session, m_type, m_name, logger):
     return model
 
 
+def swirski_reader(batch_size=64, normalize_image=True):
+    # get trials
+    trials = sorted(glob.glob("data/swirski/*"))
+
+    # loop over the trials and read the pupil-ellipses.txt files
+    for path in trials:
+        print("reading and predicting {}".format(path))
+        txt_path = path + "/pupil-ellipses.txt"
+        dataset_name = path.split("/")[2]
+
+        # loop over lines and read the labels and yield with corresponding images
+        imgs_batch = []
+        lbls_batch = []
+        with open(txt_path, mode='r') as f:
+            for line in f:
+                line = line.strip()
+                (img_id, vals) = line.split(" | ")
+                vals = vals.split(" ")
+                x = float(vals[0])
+                y = float(vals[1])
+
+                # create image path
+                img_path = "{0}/frames/{1}-eye.png".format(path, img_id)
+                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+
+                # resize the input to model input size
+                if img.shape != (config["image_height"], config["image_width"]):
+                    img, lbl = rescale(img, [x, y])
+
+                if normalize_image:
+                    img = gray_normalizer(img)
+
+                # expand dimension
+                img = change_channel(img)
+
+                imgs_batch.append(img)
+                lbls_batch.append(lbl)
+
+                if len(imgs_batch) == batch_size:
+                    yield imgs_batch, np.asarray(lbls_batch, dtype=np.float32), dataset_name
+                    imgs_batch = []
+                    lbls_batch = []
+
+            # yield the rest
+            if len(imgs_batch) > 0:
+                yield imgs_batch, np.asarray(lbls_batch, dtype=np.float32), dataset_name
+
+
+def lpw_reader(batch_size=64, normalize_image=True):
+    """
+    read LPW dataset.
+    Yield: images, labels pairs + trial name (for naming porpuse)
+    :return:
+    """
+    LPW_subject = glob.glob('data/LPW/*')
+    LPW_subject = sorted(LPW_subject)
+
+    # get all trial path
+    trials_path = []
+    for subj in LPW_subject:
+        # get the video files
+        avi_paths = glob.glob(subj + "/*.avi")
+        trials = [p.split(".")[0] for p in avi_paths]
+        trials_path.extend(sorted(trials))
+
+    # loop over all trials and yield img + lbls
+    for trial in trials_path:
+        print("reading and predicting {}...".format(trial))
+        avi_path = trial + ".avi"
+        txt_path = trial + ".txt"
+        f = open(txt_path, mode="r")
+        cap = cv2.VideoCapture(avi_path)
+        ret = True
+        img_batch = []
+        lbl_batch = []
+        while ret:
+            ret, frame = cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                line = f.readline().strip()
+                vals = line.split(" ")
+                x = float(vals[0])
+                y = float(vals[1])
+                if frame.shape != (config["image_height"], config["image_width"]):
+                    img, lbl = rescale(frame, [x, y])
+
+                if normalize_image:
+                    img = gray_normalizer(img)
+
+                img = change_channel(img)
+                img_batch.append(img)
+                lbl_batch.append(lbl)
+                if len(img_batch) == batch_size:
+                    yield img_batch, np.asarray(lbl_batch, dtype=np.float32), trial
+                    img_batch = []
+                    lbl_batch = []
+
+        # yield the rest
+        if len(img_batch) > 0:
+            yield img_batch, np.asarray(lbl_batch, dtype=np.float32), trial
+
+        # close file
+        f.close()
+
+        # close cv2.cap
+        cap.release()
+        cv2.destroyAllWindows()
+
+
 def rescale(image, label):
     scale_side = max(image.shape)
     # image width and height are equal to 192
@@ -76,16 +214,6 @@ def rescale(image, label):
     new_image[h_pad:h_pad + scaled_image.shape[0], w_pad:w_pad + scaled_image.shape[1]] = scaled_image
 
     return new_image, label
-
-
-def real_image_name(img_name):
-    """
-    get the image name from CSV file and add zero pad before the file name
-    convert 12345 to 0000012345
-    """
-    diff = 10 - len(img_name)
-    pad = ['0' for i in range(diff)]
-    return ''.join(pad) + img_name
 
 
 def get_len(csv_path):
@@ -126,7 +254,7 @@ def read_batch(csv_path, b_size, d_name):
             img, lbl = rescale(img, [x, y])
 
             # normalize image and label
-            img = u.gray_normalizer(img)
+            img = gray_normalizer(img)
 
             # expand the channel dimension
             img = np.expand_dims(img, -1)
@@ -151,12 +279,12 @@ def video_creator(video_name, images, labels, fps=15):
     :param labels: predicted labels with a value between 0-1
     :return: None
     """
-    video = cv2.VideoWriter(video_name+".avi", cv2.VideoWriter_fourcc(*'XVID'), fps, (192, 192))
+    video = cv2.VideoWriter(video_name + "pred.avi", cv2.VideoWriter_fourcc(*'XVID'), fps, (192, 192))
 
     for img, lbl in zip(images, labels):
         img = np.squeeze(img)
-        img = u.gray_denormalizer(img)
-        annotated_img = u.annotator(img, *lbl)
+        img = gray_denormalizer(img)
+        annotated_img = annotator(img, *lbl)
         video.write(annotated_img)
 
     cv2.destroyAllWindows()
@@ -164,52 +292,26 @@ def video_creator(video_name, images, labels, fps=15):
     print("{} video has been created successfully".format(video_name))
 
 
-def print_resutls(errors_dic, pixels_list):
+def print_resutls(errors_dic, pixels_list, d_names=None):
     # sort the dataset errors to have a uniform results
     # generate the header
-    dataset_names = ["data set I",
-                     "data set II",
-                     "data set III",
-                     "data set IV",
-                     "data set V",
-                     "data set VI",
-                     "data set VII",
-                     "data set VIII",
-                     "data set IX",
-                     "data set X",
-                     "data set XI",
-                     "data set XII",
-                     "data set XIII",
-                     "data set XIV",
-                     "data set XV",
-                     "data set XVI",
-                     "data set XVII",
-                     "data set XVIII",
-                     "data set XIX",
-                     "data set XX",
-                     "data set XXI",
-                     "data set XXII",
-                     "data set XXIII",
-                     "data set XXIV",
-                     "PupilNet I",
-                     "PupilNet II",
-                     "PupilNet III",
-                     "PupilNet IV",
-                     "PupilNet V"]
-    header = "Dataset name: "
+    header = "Dataset name: \t"
     for p in pixels_list:
-        header += str(p) + "\t\t"
+        header += str(p) + "\t"
 
     print(header)
 
     def row_writer(title, errors_list):
-        row = title + ": "
+        row = title + ": \t"
         for val in errors_list:
-            row += " {:2.2f}\t".format(val*100)
+            row += " {:2.2f}\t".format(val * 100)
 
         return row
 
-    for name in dataset_names:
+    if d_names is None:
+        d_names = sorted(errors_dic.keys())
+
+    for name in d_names:
         print(row_writer(name, errors_dic[name]))
 
     # print average error
@@ -219,11 +321,24 @@ def print_resutls(errors_dic, pixels_list):
     print(row_writer("average error", avg))
 
 
+def real_image_name(img_name):
+    """
+    get the image name from CSV file and add zero pad before the file name
+    convert 12345 to 0000012345
+    """
+    diff = 10 - len(img_name)
+    pad = ['0' for i in range(diff)]
+    return ''.join(pad) + img_name
+
+
 def main(m_type, m_name, logger):
     with tf.Session() as sess:
 
         # load best model
         model = load_model(sess, m_type, m_name, logger)
+
+        # print the result for different pixel error
+        pixel_errors = [1, 2, 3, 4, 5, 7, 10, 15, 20]
 
         # get the csv files
         datasets = glob.glob('data/emma_data/*.txt')
@@ -278,20 +393,78 @@ def main(m_type, m_name, logger):
                 # create the predicted labels on test sets
                 # video_creator(dataset_name, test_images, pred_labels)
 
-    # print the result for different pixel error
-    pixel_errors = [1, 2, 3, 4, 5, 7, 10, 15, 20]
 
-    # save the results in a dic
-    dataset_errors = {}
+        # save the results in a dic
+        dataset_errors = {}
 
-    for key, val in dataset_results.items():
-        dataset_errors[key] = []
-        for e in pixel_errors:
-            d = np.asarray(val, dtype=np.float32)
-            acc = np.mean(np.asarray(d < e, dtype=np.int))
-            dataset_errors[key].append(acc)
+        for key, val in dataset_results.items():
+            dataset_errors[key] = []
+            for e in pixel_errors:
+                d = np.asarray(val, dtype=np.float32)
+                acc = np.mean(np.asarray(d < e, dtype=np.int))
+                dataset_errors[key].append(acc)
 
-    print_resutls(dataset_errors, pixel_errors)
+        print_resutls(dataset_errors, pixel_errors, dataset_names)
+
+        print("####### LPW #######")
+        # run model on LPW dataset
+        lpw_results = {}
+        lpw_r = lpw_reader(normalize_image=True)
+        for imgs, truths, d_name in lpw_r:
+            # add dataset name to results dict
+            if d_name not in lpw_results.keys():
+                lpw_results[d_name] = []
+
+            predictions = model.predict(sess, imgs)
+
+            # calculate the difference
+            a = predictions[:, 0] - truths[:, 0]
+            b = predictions[:, 1] - truths[:, 1]
+
+            diff = np.sqrt((a * a + b * b))
+
+            lpw_results[d_name].extend(diff)
+
+        lpw_errors = {}
+
+        for key, val in lpw_results.items():
+            lpw_errors[key] = []
+            for e in pixel_errors:
+                d = np.asarray(val, dtype=np.float32)
+                acc = np.mean(np.asarray(d < e, dtype=np.int))
+                lpw_errors[key].append(acc)
+
+        print_resutls(lpw_errors, pixel_errors)
+
+        print("####### SWIRSKI #######")
+        # run model on LPW dataset
+        swk_results = {}
+        swk_r = swirski_reader()
+        for imgs, truths, d_name in swk_r:
+            # add dataset name to results dict
+            if d_name not in swk_results.keys():
+                swk_results[d_name] = []
+
+            predictions = model.predict(sess, imgs)
+
+            # calculate the difference
+            a = predictions[:, 0] - truths[:, 0]
+            b = predictions[:, 1] - truths[:, 1]
+
+            diff = np.sqrt((a * a + b * b))
+
+            swk_results[d_name].extend(diff)
+
+        swk_errors = {}
+
+        for key, val in swk_results.items():
+            swk_errors[key] = []
+            for e in pixel_errors:
+                d = np.asarray(val, dtype=np.float32)
+                acc = np.mean(np.asarray(d < e, dtype=np.int))
+                swk_errors[key].append(acc)
+
+        print_resutls(swk_errors, pixel_errors)
 
 
 if __name__ == "__main__":
@@ -316,10 +489,8 @@ if __name__ == "__main__":
     model_name = "Inception_test"
     model_type = args.model_type
     model_type = "INC"
-    video_input = args.video_input
 
     logger = Logger(model_type, model_name, "", config, dir="models/")
     logger.log("Start inferring model...")
 
     main(model_type, model_name, logger)
-

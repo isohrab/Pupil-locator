@@ -2,7 +2,7 @@ import os
 import numpy as np
 import cv2
 from random import shuffle
-
+from config import config
 
 def check_dir(path):
     if not os.path.exists(path):
@@ -33,7 +33,7 @@ def ri(low, high):
     return np.random.randint(low, high)
 
 
-def annotator(img, x, y, w=10, h=None):
+def annotator(color, img, x, y, w=10, h=None):
     """
     draw a circle around predicted pupil
     :param img: input frame
@@ -43,8 +43,18 @@ def annotator(img, x, y, w=10, h=None):
     :param h: height of pupil
     :return: an image with a circle around the pupil
     """
-    w_img, h_img = img.shape
-    rgb = np.concatenate((img, img, img), axis=2)
+    if color is None:
+        color = (0, 250, 250)
+
+    c = 1
+    if np.ndim(img) == 3:
+        w_img, h_img, c = img.shape
+    else:
+        w_img, h_img = img.shape
+        gray_img = np.expand_dims(img, -1)
+
+    if c == 1:
+        img = np.concatenate((gray_img, gray_img, gray_img), axis=2)
 
     # l1xs = int(label[0] - label[2] / 2)
     # l1ys = int(label[1])
@@ -64,10 +74,9 @@ def annotator(img, x, y, w=10, h=None):
         h = w
 
     # draw ellipse
-    color = (0, 250, 250)
-    rgb = cv2.ellipse(rgb, ((x, y), (w, h), 0), color, 1)
+    img = cv2.ellipse(img, ((x, y), (w, h), 0), color, 1)
 
-    return rgb
+    return img
 
 
 def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_label=False, augmentor=None):
@@ -117,11 +126,11 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
             img = np.asarray(img, dtype=np.uint8)
 
         if with_label:
-            img = annotator(img, label)
+            img = annotator(img, *label)
             font = cv2.FONT_HERSHEY_PLAIN
             texts = i[0].split("/")
-            text = texts[1] + "/" + texts[2] + "/" + texts[3]
-            img = cv2.putText(img, text, (5, 10), font, 0.8, (250, 0, 0), 1, cv2.LINE_8)
+            text = texts[2] + "/" + texts[3] + "/" + texts[4]
+            img = cv2.putText(img, text, (5, 10), font, 0.6, (250, 0, 0), 1, cv2.LINE_8)
         else:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
@@ -140,42 +149,12 @@ def change_channel(img, num_channel=1):
     :param num_channel: desired number of channel
     :return: normalized frame with num_channel
     """
+    img = np.expand_dims(img, -1)
     if num_channel == 3:
-        w, h = img.shape
-        img = np.tile(img, (3, 1))
-        img = np.reshape(img, (w, h, 3))
-    elif num_channel == 1:
-        img = np.expand_dims(img, -1)
-    else:
-        raise ValueError("Are you sure?")
+        img = np.concatenate((img, img, img), axis=2)
 
     return img
 
-
-MIN_IMG_W = 192
-
-
-def bound_it(amin, amax, imgmax):
-    assert imgmax >= MIN_IMG_W
-    s = amax - amin
-    if s < MIN_IMG_W:
-        d = MIN_IMG_W - s
-        amin = amin - d / 2
-        amax = amax + d / 2
-        if amin < 0:
-            amax += abs(amin)
-            amin = 0
-
-        if amax > imgmax:
-            amin -= amax - imgmax
-            amax = imgmax
-
-            assert amin >= 0 and amax < imgmax
-    return [amin, amax]
-
-
-if __name__ == "__main__":
-    print(bound_it(163, 423, 333))
 
 def gray_normalizer(gray):
     """
@@ -185,9 +164,8 @@ def gray_normalizer(gray):
     :return: normalized grayscale image
     """
     # average mean over all training images ( without noise)
-    mean = 112.59541
-    out_gray = np.asarray(gray - mean, dtype=np.float32)
-    out_gray = out_gray / 255
+    gray = gray * 1/255
+    out_gray = np.asarray(gray - 0.5, dtype=np.float32)
     return out_gray
 
 
@@ -198,9 +176,29 @@ def gray_denormalizer(gray):
     :return: denormalized grayscale image
     """
     # average mean over all training images ( without noise)
-    mean = 112.59541
-    out_gray = gray * 255
-    out_gray = np.asarray(out_gray + mean, dtype=np.uint8)
+    out_gray = gray + 0.5
+    out_gray = np.asarray(out_gray * 255, dtype=np.uint8)
 
     return out_gray
 
+
+def save_dict(dict, save_path):
+    with open(save_path, mode="w") as f:
+        for key, val in dict.items():
+            f.write(key+";"+str(val)+"\n")
+    print("Class dict saved successfully at: {}".format(save_path))
+
+
+def load_dict(load_path):
+    dict = {}
+    with open(load_path, mode="r") as f:
+        for line in f:
+            key, val = line.split(";")
+            dict[key] = int(val)
+
+    print("Class dict loaded successfuly at: {}".format(load_path))
+    return dict
+
+if __name__ == "__main__":
+    ag = Augmentor('data/noisy_videos', config)
+    create_noisy_video(with_label=True, augmentor=ag)

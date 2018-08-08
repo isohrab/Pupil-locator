@@ -31,6 +31,9 @@ class Batchizer(object):
 
         self.n_batches = int(np.ceil(len(self.data_list) / self.batch_size))
 
+    def __len__(self):
+        return len(self.data_list)
+
     def batches(self, ag, lbl_len=4, num_c=1,
                 zero_mean=False):
         # before each epoch, shuffle data

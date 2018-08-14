@@ -28,9 +28,9 @@ class BaseModel(object):
         # shape: [Batch_size, Width, Height, Channels]
         self.X = tf.placeholder(dtype=tf.float32,
                                 shape=(None,
-                                       self.cfg["image_height"],
-                                       self.cfg["image_width"],
-                                       self.cfg["image_channel"]),
+                                       self.cfg["input_height"],
+                                       self.cfg["input_width"],
+                                       self.cfg["input_channel"]),
                                 name="images_input")
 
         # shape: [Batch_size, 5] (x,y,w,h,a)

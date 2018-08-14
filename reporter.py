@@ -7,7 +7,7 @@ from tqdm import tqdm
 import numpy as np
 from config import config
 from utils import gray_normalizer, annotator, gray_denormalizer, change_channel
-from Logger import Logger
+from logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 
 dataset_names = ["data set I",
@@ -158,7 +158,7 @@ def lpw_reader(batch_size=64, normalize_image=True):
                 vals = line.split(" ")
                 x = float(vals[0])
                 y = float(vals[1])
-                if frame.shape != (config["image_height"], config["image_width"]):
+                if frame.shape != (config["input_height"], config["input_width"]):
                     img, lbl = rescale(frame, [x, y])
 
                 if normalize_image:
@@ -187,7 +187,7 @@ def lpw_reader(batch_size=64, normalize_image=True):
 def rescale(image, label):
     scale_side = max(image.shape)
     # image width and height are equal to 192
-    scale_value = config["image_width"] / scale_side
+    scale_value = config["input_width"] / scale_side
 
     # scale down or up the input image
     scaled_image = cv2.resize(image, dsize=None, fx=scale_value, fy=scale_value, interpolation=cv2.INTER_AREA)
@@ -200,15 +200,15 @@ def rescale(image, label):
     label[1] = label[1] * scale_value
 
     # one of pad should be zero
-    w_pad = int((config["image_width"] - scaled_image.shape[1]) / 2)
-    h_pad = int((config["image_width"] - scaled_image.shape[0]) / 2)
+    w_pad = int((config["input_width"] - scaled_image.shape[1]) / 2)
+    h_pad = int((config["input_width"] - scaled_image.shape[0]) / 2)
 
     # add half of the pad to the label (x, y)
     label[0] += w_pad
     label[1] += h_pad
 
     # create a new image with size of: (config["image_width"], config["image_height"])
-    new_image = np.zeros((config["image_width"], config["image_height"]), dtype=np.uint8)
+    new_image = np.zeros((config["input_width"], config["input_height"]), dtype=np.uint8)
 
     # put the scaled image in the middle of new image
     new_image[h_pad:h_pad + scaled_image.shape[0], w_pad:w_pad + scaled_image.shape[1]] = scaled_image
@@ -393,7 +393,6 @@ def main(m_type, m_name, logger):
                 # create the predicted labels on test sets
                 # video_creator(dataset_name, test_images, pred_labels)
 
-
         # save the results in a dic
         dataset_errors = {}
 
@@ -486,7 +485,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "Inception_test"
+    model_name = "Inc_Purifier2"
     model_type = args.model_type
     model_type = "INC"
 

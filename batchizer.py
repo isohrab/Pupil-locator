@@ -48,21 +48,22 @@ class Batchizer(object):
                 label = np.asarray(row[1:], dtype=np.float32)
 
                 # add noise to images and corresponding label
-                ag_img, ag_lbl = ag.addNoise(image, label)
+                if ag is not None:
+                    image, label = ag.addNoise(image, label)
 
                 # discard unused labels
-                ag_lbl = ag_lbl[0:lbl_len]
+                label = label[0:lbl_len]
 
-                labels.append(ag_lbl)
+                labels.append(label)
 
                 # zero mean the image
                 if zero_mean:
-                    ag_img = gray_normalizer(ag_img)
+                    image = gray_normalizer(image)
 
                 # change to desired num_channel
-                ag_img = change_channel(ag_img, num_c)
+                    image = change_channel(image, num_c)
 
-                images.append(ag_img)
+                images.append(image)
 
                 img_names.append(row[0])
                 if len(images) == self.batch_size:

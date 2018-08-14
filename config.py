@@ -1,8 +1,8 @@
 config = dict()
 config["batch_size"] = 64
 config["total_steps"] = 400000
-config["validate_every"] = 2000
-config["validate_for"] = 700
+config["validate_every"] = 5000
+config["validate_for"] = 400
 config["save_every"] = 3 * config["validate_every"]
 config["n_epochs"] = 50
 
@@ -20,17 +20,17 @@ config["optimizer"] = "RMSProb"
 config["keep_prob"] = 0.75
 config["MAX_GRADIANT_NORM"] = 5.0
 # input info
-config["image_width"] = 192
-config["image_height"] = 192
-config["image_channel"] = 1
+config["input_width"] = 192
+config["input_height"] = 192
+config["input_channel"] = 1
 # Output shape
-config["output_dim"] = 3
+config["output_dim"] = 5
 config["output_weights"] = [2.0, 2.0, 1.0, 1.0, 0.5]
 
 # Augmenation parameters
-config["prob_downscale"] = 0.5
-config["max_downscale"] = 0.7
-config["min_downscale"] = 0.9
+config["prob_upscale"] = 0.75
+config["max_upscale"] = 1.2
+config["min_upscale"] = 2
 
 config["prob_reflection"] = 0.75
 config["min_reflection"] = 0.35
@@ -50,7 +50,7 @@ config["occlusion_max_obj"] = 6
 # exposure on noisy frames
 config["prob_exposure"] = 0.5
 config["min_exposure"] = 0.8
-config["max_exposure"] = 1.8
+config["max_exposure"] = 1.2
 
 # crop input image
 config["crop_probability"] = 0.5
@@ -61,7 +61,7 @@ config["crop_max_ratio"] = 0.95
 config["flip_probability"] = 0.5
 
 # L2 regularization
-config["l2_beta"] = 0.00003
+config["l2_beta"] = 0.05
 
 # VOC configs
 config["voc_outputs"] = 21

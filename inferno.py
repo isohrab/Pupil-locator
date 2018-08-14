@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from config import config
 from utils import annotator, change_channel, gray_normalizer
-from Logger import Logger
+from logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from augmentor import Augmentor
 

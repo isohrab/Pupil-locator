@@ -72,6 +72,9 @@ def process_data(original_path, portion):
     saveCSV(train_data, "train_data.csv", "data/")
     saveCSV(valid_data, "valid_data.csv", "data/")
 
+    print("There are {0} images in train set".format(len(train_data)))
+    print("There are {0} images in validation set".format(len(valid_data)))
+
 
 def saveCSV(data_list, output_name, save_path):
     # save a list into a CSV file
@@ -85,5 +88,5 @@ def saveCSV(data_list, output_name, save_path):
     print("{0} has been successfully saved on {1}".format(output_name, save_path))
 
 if __name__ == "__main__":
-    process_data("Original-data", [0.9, 0.1])
+    process_data("data/Original-data", [0.94, 0.06])
     print("done...")

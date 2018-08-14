@@ -5,7 +5,7 @@ from config import config
 from batchizer import Batchizer
 from tqdm import tqdm
 from utils import *
-from Logger import Logger
+from logger import Logger
 import numpy as np
 from augmentor import Augmentor
 
@@ -38,19 +38,23 @@ def create_model(session, m_type, m_name, logger):
 
 def print_predictions(result, logger):
     logger.log("########### Print  Predictions ################")
-    logger.log("label: [\tx\t\t y\t\t w\t\t h\t\t \a")
+    logger.log("label: [\tx\t y\t w\t h\t a]")
     for r in result:
         y = r[0]
         pred = r[1]
         img_path = r[2]
 
         logger.log("Path: " + img_path)
-        logger.log("truth: {0:2.2f} {1:2.2f} {2:2.2f}".format(y[0],
-                                                              y[1],
-                                                              y[2]))
-        logger.log("pred : {0:2.2f} {1:2.2f} {2:2.2f}\n".format(pred[0],
-                                                                pred[1],
-                                                                pred[2]))
+        logger.log("truth: {0:2.2f} {1:2.2f} {2:2.2f} {2:2.2f} {2:2.2f}".format(y[0],
+                                                                                y[1],
+                                                                                y[2],
+                                                                                y[3],
+                                                                                y[4]))
+        logger.log("pred : {0:2.2f} {1:2.2f} {2:2.2f} {2:2.2f} {2:2.2f}\n".format(pred[0],
+                                                                                  pred[1],
+                                                                                  pred[2],
+                                                                                  pred[3],
+                                                                                  pred[4]))
 
 
 def main(model_type, model_name, logger):
@@ -78,16 +82,16 @@ def main(model_type, model_name, logger):
             # initial batchizer
             train_batchizer = Batchizer(train_path, config["batch_size"])
             valid_batchizer = Batchizer(valid_path, config["batch_size"])
-# TODO: move arguments to class initializer
-            # init augmentor
-            ag = Augmentor('data/noisy_videos/', config)
-            train_batches = train_batchizer.batches(ag,
+
+            # init augmentor only once for both train and validation set
+            # ag = Augmentor('data/noisy_videos/', config)
+            train_batches = train_batchizer.batches(None,
                                                     config["output_dim"],
-                                                    num_c=config["image_channel"],
+                                                    num_c=config["input_channel"],
                                                     zero_mean=True)
-            valid_batches = valid_batchizer.batches(ag,
+            valid_batches = valid_batchizer.batches(None,
                                                     config["output_dim"],
-                                                    num_c=config["image_channel"],
+                                                    num_c=config["input_channel"],
                                                     zero_mean=True)
 
             # check if learning rate set correctly
@@ -95,7 +99,7 @@ def main(model_type, model_name, logger):
 
             while model.global_step.eval() < config["total_steps"]:
                 lr_idx = int(model.global_step.eval() / config["decay_step"])
-                lr_idx = min(lr_idx, len(config["learning_rate"])-1)
+                lr_idx = min(lr_idx, len(config["learning_rate"]) - 1)
                 lr = config["learning_rate"][lr_idx]
                 with tqdm(total=config["validate_every"], unit="batch") as t:
                     for x, y, _ in train_batches:
@@ -173,9 +177,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "Inception_test"
+    model_name = "Inc_Purifier3"
     model_type = "INC"
-    model_comment = "Inception with l2"
+    model_comment = "Inception half with l2 without augmentation for purifing invalid data"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")

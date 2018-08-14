@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import cv2
-from random import shuffle
 from config import config
 
 def check_dir(path):
@@ -33,7 +32,7 @@ def ri(low, high):
     return np.random.randint(low, high)
 
 
-def annotator(color, img, x, y, w=10, h=None):
+def annotator(color, img, x, y, w=10, h=None, a=0):
     """
     draw a circle around predicted pupil
     :param img: input frame
@@ -47,14 +46,13 @@ def annotator(color, img, x, y, w=10, h=None):
         color = (0, 250, 250)
 
     c = 1
-    if np.ndim(img) == 3:
-        w_img, h_img, c = img.shape
-    else:
-        w_img, h_img = img.shape
-        gray_img = np.expand_dims(img, -1)
+    if np.ndim(img) == 2:
+        img = np.expand_dims(img, -1)
+    elif np.ndim(img) == 3:
+        c = img.shape[2]
 
     if c == 1:
-        img = np.concatenate((gray_img, gray_img, gray_img), axis=2)
+        img = np.concatenate((img, img, img), axis=2)
 
     # l1xs = int(label[0] - label[2] / 2)
     # l1ys = int(label[1])
@@ -74,7 +72,7 @@ def annotator(color, img, x, y, w=10, h=None):
         h = w
 
     # draw ellipse
-    img = cv2.ellipse(img, ((x, y), (w, h), 0), color, 1)
+    img = cv2.ellipse(img, ((x, y), (w, h), a), color, 1)
 
     return img
 
@@ -110,8 +108,8 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
     selected_images = data_list[start_idx:start_idx + images_len]
 
     output_fn = 'video_{}s_{}fps.avi'.format(length, fps)
-    # TODO: width/height are hard coded
-    video = cv2.VideoWriter(output_fn, cv2.VideoWriter_fourcc(*"XVID"), fps, (192, 192))
+    video = cv2.VideoWriter(output_fn, cv2.VideoWriter_fourcc(*"XVID"), fps,
+                            (config["input_height"], config["input_width"]))
 
     for i in selected_images:
         img = cv2.imread(i[0], cv2.IMREAD_GRAYSCALE)
@@ -126,7 +124,7 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
             img = np.asarray(img, dtype=np.uint8)
 
         if with_label:
-            img = annotator(img, *label)
+            img = annotator((220, 0, 0), img, *label)
             font = cv2.FONT_HERSHEY_PLAIN
             texts = i[0].split("/")
             text = texts[2] + "/" + texts[3] + "/" + texts[4]

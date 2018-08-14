@@ -61,8 +61,7 @@ config["crop_max_ratio"] = 0.95
 config["flip_probability"] = 0.5
 
 # L2 regularization
-config["l2_beta"] = 0.05
-
+config["l2_beta"] = 0.005
 # VOC configs
 config["voc_outputs"] = 21
 

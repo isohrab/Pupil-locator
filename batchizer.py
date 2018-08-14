@@ -61,7 +61,7 @@ class Batchizer(object):
                     image = gray_normalizer(image)
 
                 # change to desired num_channel
-                    image = change_channel(image, num_c)
+                image = change_channel(image, num_c)
 
                 images.append(image)
 

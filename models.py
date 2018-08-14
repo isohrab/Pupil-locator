@@ -1041,6 +1041,20 @@ class Inception(BaseModel):
             net = self.block_a_reduction(net, "Reduction_A", self.train_flag)
             self.logger.log("Reduction_A shape {}".format(net.get_shape()))
 
+            # [batch, H, W, C]
+            b, h, w, c = net.get_shape()
+
+            spatial = tf.reduce_mean(net, axis=-1, name="spatial")
+            self.logger.log("spatial shape {}".format(spatial.get_shape()))
+
+            spatial = tf.reshape(spatial, shape=(-1, h * w), name="spatial2d")
+
+            # create an attention layer based on spatial results with tanh activation
+            self.attention = tf.layers.dense(spatial, self.m*1024, activation=tf.nn.tanh, use_bias=False,
+                                             kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                                             kernel_regularizer=self.l2_reg,
+                                             name="Attention")
+
             # Block B: 4x
             net = self.block_b(net, "Block_B0", self.train_flag)
             self.logger.log("Block_B0 shape {}".format(net.get_shape()))
@@ -1058,6 +1072,10 @@ class Inception(BaseModel):
             self.logger.log("GAP shape {}".format(self.GAP.get_shape()))
 
             self.GAP = tf.nn.dropout(self.GAP, self.keep_prob, name="GAP_dropout")
+
+            self.GAP = tf.multiply(self.GAP, self.attention, name="Gap_Attention")
+
+
 
             # # Block B reducttion
             # net = self.block_b_reduction(net, "Reduction_B", self.train_flag)

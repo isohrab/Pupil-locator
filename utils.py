@@ -54,18 +54,18 @@ def annotator(color, img, x, y, w=10, h=None, a=0):
     if c == 1:
         img = np.concatenate((img, img, img), axis=2)
 
-    # l1xs = int(label[0] - label[2] / 2)
-    # l1ys = int(label[1])
-    # l1xe = int(label[0] + label[2] / 2)
-    # l1ye = int(label[1])
-    #
-    # l2xs = int(label[0])
-    # l2ys = int(label[1] - label[3] / 2)
-    # l2xe = int(label[0])
-    # l2ye = int(label[1] + label[3] / 2)
-    #
-    # rgb = cv2.line(rgb, (l1xs, l1ys), (l1xe, l1ye), (255, 255, 0), 1)
-    # rgb = cv2.line(rgb, (l2xs, l2ys), (l2xe, l2ye), (255, 255, 0), 1)
+    l1xs = int(x - 3)
+    l1ys = int(y)
+    l1xe = int(x + 3)
+    l1ye = int(y)
+
+    l2xs = int(x)
+    l2ys = int(y - 3)
+    l2xe = int(x)
+    l2ye = int(y + 3)
+
+    img = cv2.line(img, (l1xs, l1ys), (l1xe, l1ye), color, 1)
+    img = cv2.line(img, (l2xs, l2ys), (l2xe, l2ye), color, 1)
 
     # We predict only width!
     if h is None:

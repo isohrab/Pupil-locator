@@ -88,6 +88,7 @@ def swirski_reader(batch_size=64, normalize_image=True):
         # loop over lines and read the labels and yield with corresponding images
         imgs_batch = []
         lbls_batch = []
+        shapes = []
         with open(txt_path, mode='r') as f:
             for line in f:
                 line = line.strip()
@@ -100,9 +101,11 @@ def swirski_reader(batch_size=64, normalize_image=True):
                 img_path = "{0}/frames/{1}-eye.png".format(path, img_id)
                 img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
 
+                shapes.append(img.shape)
+
                 # resize the input to model input size
                 if img.shape != (config["image_height"], config["image_width"]):
-                    img, lbl = rescale(img, [x, y])
+                    img = rescale(img)
 
                 if normalize_image:
                     img = gray_normalizer(img)
@@ -114,13 +117,16 @@ def swirski_reader(batch_size=64, normalize_image=True):
                 lbls_batch.append(lbl)
 
                 if len(imgs_batch) == batch_size:
-                    yield imgs_batch, np.asarray(lbls_batch, dtype=np.float32), dataset_name
+                    yield imgs_batch, np.asarray(lbls_batch, dtype=np.float32),\
+                          dataset_name, np.asarray(shapes, dtype=np.float32)
                     imgs_batch = []
                     lbls_batch = []
+                    shapes = []
 
             # yield the rest
             if len(imgs_batch) > 0:
-                yield imgs_batch, np.asarray(lbls_batch, dtype=np.float32), dataset_name
+                yield imgs_batch, np.asarray(lbls_batch, dtype=np.float32),\
+                      dataset_name, np.asarray(shapes, dtype=np.float32)
 
 
 def lpw_reader(batch_size=64, normalize_image=True):
@@ -150,31 +156,39 @@ def lpw_reader(batch_size=64, normalize_image=True):
         ret = True
         img_batch = []
         lbl_batch = []
+        shapes = []
         while ret:
             ret, frame = cap.read()
             if ret:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 line = f.readline().strip()
                 vals = line.split(" ")
+
+                shapes.append(frame.shape)
+
                 x = float(vals[0])
                 y = float(vals[1])
                 if frame.shape != (config["input_height"], config["input_width"]):
-                    img, lbl = rescale(frame, [x, y])
+                    img = rescale(frame)
 
                 if normalize_image:
                     img = gray_normalizer(img)
 
                 img = change_channel(img)
                 img_batch.append(img)
-                lbl_batch.append(lbl)
+                lbl_batch.append([x, y])
                 if len(img_batch) == batch_size:
-                    yield img_batch, np.asarray(lbl_batch, dtype=np.float32), trial
+                    yield img_batch,\
+                          np.asarray(lbl_batch, dtype=np.float32),\
+                          trial,\
+                          np.asarray(shapes, dtype=np.float32)
                     img_batch = []
                     lbl_batch = []
+                    shapes = []
 
         # yield the rest
         if len(img_batch) > 0:
-            yield img_batch, np.asarray(lbl_batch, dtype=np.float32), trial
+            yield img_batch, np.asarray(lbl_batch, dtype=np.float32), trial, np.asarray(shapes, dtype=np.float32)
 
         # close file
         f.close()
@@ -184,28 +198,20 @@ def lpw_reader(batch_size=64, normalize_image=True):
         cv2.destroyAllWindows()
 
 
-def rescale(image, label):
+def rescale(image):
     scale_side = max(image.shape)
     # image width and height are equal to 192
     scale_value = config["input_width"] / scale_side
 
     # scale down or up the input image
-    scaled_image = cv2.resize(image, dsize=None, fx=scale_value, fy=scale_value, interpolation=cv2.INTER_AREA)
+    scaled_image = cv2.resize(image, dsize=None, fx=scale_value, fy=scale_value)
 
     # convert to numpy array
     scaled_image = np.asarray(scaled_image, dtype=np.uint8)
 
-    # rescale the label too
-    label[0] = label[0] * scale_value
-    label[1] = label[1] * scale_value
-
     # one of pad should be zero
     w_pad = int((config["input_width"] - scaled_image.shape[1]) / 2)
     h_pad = int((config["input_width"] - scaled_image.shape[0]) / 2)
-
-    # add half of the pad to the label (x, y)
-    label[0] += w_pad
-    label[1] += h_pad
 
     # create a new image with size of: (config["image_width"], config["image_height"])
     new_image = np.zeros((config["input_width"], config["input_height"]), dtype=np.uint8)
@@ -213,7 +219,7 @@ def rescale(image, label):
     # put the scaled image in the middle of new image
     new_image[h_pad:h_pad + scaled_image.shape[0], w_pad:w_pad + scaled_image.shape[1]] = scaled_image
 
-    return new_image, label
+    return new_image
 
 
 def get_len(csv_path):
@@ -235,6 +241,7 @@ def get_len(csv_path):
 def read_batch(csv_path, b_size, d_name):
     images = []
     labels = []
+    shapes = []
 
     with open(csv_path, mode='r') as f:
         # pass the header
@@ -246,12 +253,13 @@ def read_batch(csv_path, b_size, d_name):
             image_name = real_image_name(values[1])
             img = cv2.imread("data/emma_data/{}/{}.png".format(d_name, image_name), cv2.IMREAD_GRAYSCALE)
 
+            shapes.append(img.shape)
             # read and convert the labels
             x = int(values[2]) / 2
             y = int(img.shape[0] - int(values[3]) / 2)
 
             # rescale images to 192x192 pixels
-            img, lbl = rescale(img, [x, y])
+            img = rescale(img)
 
             # normalize image and label
             img = gray_normalizer(img)
@@ -260,15 +268,16 @@ def read_batch(csv_path, b_size, d_name):
             img = np.expand_dims(img, -1)
 
             images.append(img)
-            labels.append(lbl)
+            labels.append([x, y])
             if len(images) == b_size:
-                yield images, np.asarray(labels, dtype=np.float32)
+                yield images, np.asarray(labels, dtype=np.float32), np.asarray(shapes, dtype=np.float32)
                 images = []
                 labels = []
+                shapes = []
 
     # yield the rest
     if len(images) != 0:
-        yield images, np.asarray(labels, dtype=np.float32)
+        yield images, np.asarray(labels, dtype=np.float32), np.asarray(shapes, dtype=np.float32)
 
 
 def video_creator(video_name, images, labels, fps=15):
@@ -330,6 +339,25 @@ def real_image_name(img_name):
     pad = ['0' for i in range(diff)]
     return ''.join(pad) + img_name
 
+def upscale_preds(_preds, _shapes):
+    """
+    Get the predictions and upscale them to original size of dataset
+    :param preds:
+    :param shapes:
+    :return: upscales x and y
+    """
+    # get the image w/h for upscaling the predictions
+    h = _shapes[:, 0]
+    w = _shapes[:, 1]
+
+    h_s = h / config["input_height"]
+    w_s = w / config["input_width"]
+
+    x = _preds[:, 0] * w_s
+    y = _preds[:, 1] * h_s
+
+    return x, y
+
 
 def main(m_type, m_name, logger):
     with tf.Session() as sess:
@@ -370,16 +398,13 @@ def main(m_type, m_name, logger):
                 pred_labels = []
 
                 # loop over batch of images
-                for images, truths in batch:
+                for images, truths, shapes in batch:
                     predictions = model.predict(sess, images)
 
-                    # get the image w/h for denormalizing the labels
-                    w = images[0].shape[1]
-                    h = images[0].shape[0]
-
+                    upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
                     # calculate the difference
-                    a = predictions[:, 0] - truths[:, 0]
-                    b = predictions[:, 1] - truths[:, 1]
+                    a = upscale_preds_x - truths[:, 0]
+                    b = upscale_preds_y - truths[:, 1]
 
                     diff = np.sqrt((a * a + b * b))
 
@@ -387,8 +412,8 @@ def main(m_type, m_name, logger):
                     t.update()
 
                     # add images and predicted labels to test_images and pred_labels to creating the video
-                    test_images.extend(images)
-                    pred_labels.extend(predictions)
+                    # test_images.extend(images)
+                    # pred_labels.extend(predictions)
 
                 # create the predicted labels on test sets
                 # video_creator(dataset_name, test_images, pred_labels)
@@ -409,16 +434,18 @@ def main(m_type, m_name, logger):
         # run model on LPW dataset
         lpw_results = {}
         lpw_r = lpw_reader(normalize_image=True)
-        for imgs, truths, d_name in lpw_r:
+        for imgs, truths, d_name, shapes in lpw_r:
             # add dataset name to results dict
             if d_name not in lpw_results.keys():
                 lpw_results[d_name] = []
 
             predictions = model.predict(sess, imgs)
 
+            upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
+
             # calculate the difference
-            a = predictions[:, 0] - truths[:, 0]
-            b = predictions[:, 1] - truths[:, 1]
+            a = upscale_preds_x - truths[:, 0]
+            b = upscale_preds_y - truths[:, 1]
 
             diff = np.sqrt((a * a + b * b))
 
@@ -439,16 +466,18 @@ def main(m_type, m_name, logger):
         # run model on LPW dataset
         swk_results = {}
         swk_r = swirski_reader()
-        for imgs, truths, d_name in swk_r:
+        for imgs, truths, d_name, shapes in swk_r:
             # add dataset name to results dict
             if d_name not in swk_results.keys():
                 swk_results[d_name] = []
 
             predictions = model.predict(sess, imgs)
 
+            upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
+
             # calculate the difference
-            a = predictions[:, 0] - truths[:, 0]
-            b = predictions[:, 1] - truths[:, 1]
+            a = upscale_preds_x - truths[:, 0]
+            b = upscale_preds_y - truths[:, 1]
 
             diff = np.sqrt((a * a + b * b))
 
@@ -485,7 +514,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "Inc_Purifier2"
+    model_name = "inception_test"
     model_type = args.model_type
     model_type = "INC"
 

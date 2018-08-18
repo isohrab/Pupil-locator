@@ -45,12 +45,12 @@ def print_predictions(result, logger):
         img_path = r[2]
 
         logger.log("Path: " + img_path)
-        logger.log("truth: {0:2.2f} {1:2.2f} {2:2.2f} {2:2.2f} {2:2.2f}".format(y[0],
+        logger.log("truth: {0:2.2f} {1:2.2f} {2:2.2f} {3:2.2f} {4:2.2f}".format(y[0],
                                                                                 y[1],
                                                                                 y[2],
                                                                                 y[3],
                                                                                 y[4]))
-        logger.log("pred : {0:2.2f} {1:2.2f} {2:2.2f} {2:2.2f} {2:2.2f}\n".format(pred[0],
+        logger.log("pred : {0:2.2f} {1:2.2f} {2:2.2f} {3:2.2f} {4:2.2f}\n".format(pred[0],
                                                                                   pred[1],
                                                                                   pred[2],
                                                                                   pred[3],
@@ -84,12 +84,12 @@ def main(model_type, model_name, logger):
             valid_batchizer = Batchizer(valid_path, config["batch_size"])
 
             # init augmentor only once for both train and validation set
-            # ag = Augmentor('data/noisy_videos/', config)
-            train_batches = train_batchizer.batches(None,
+            ag = Augmentor('data/noisy_videos/', config)
+            train_batches = train_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["input_channel"],
                                                     zero_mean=True)
-            valid_batches = valid_batchizer.batches(None,
+            valid_batches = valid_batchizer.batches(ag,
                                                     config["output_dim"],
                                                     num_c=config["input_channel"],
                                                     zero_mean=True)
@@ -116,6 +116,7 @@ def main(model_type, model_name, logger):
                         if model.global_step.eval() % config["validate_every"] == 0:
                             break
 
+
                 valid_counter = 0
                 pred_result = []
                 with tqdm(total=config["validate_for"], unit="batch") as t:
@@ -125,6 +126,7 @@ def main(model_type, model_name, logger):
 
                         batch_loss, _, pred = model.eval(sess, x, y)
                         valid_loss.append(batch_loss)
+
 
                         t.set_description_str("batch_loss:{0:2.8f}".format(batch_loss))
                         valid_counter += 1
@@ -177,7 +179,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "Inc_Purifier3"
+    model_name = "inception_test"
     model_type = "INC"
     model_comment = "Inception half with l2 without augmentation for purifing invalid data"
 

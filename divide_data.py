@@ -54,6 +54,15 @@ def process_data(original_path, portion):
         w = np.float32(e[2].text)
         h = np.float32(e[3].text)
         a = np.float32(e[4].text)
+
+        if x <= 0 or x >= 192:
+            print("label for {0} is out of bound".format(img))
+            continue
+
+        if y <= 0 or y >= 192:
+            print("label for {0} is out of bound".format(img))
+            continue
+
         data.append([img, x, y, w, h, a])
 
     # shuffle data

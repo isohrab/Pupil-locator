@@ -26,8 +26,8 @@ def assert_it(img, lbl):
     # check input label
     assert isinstance(lbl, list), "Label should be a list"
     assert len(lbl) == 5, "Length of label should be 5 (x, y, w, h, a)"
-    assert (0 < lbl[0] < w), "x value should be in range of 0 and width of image"
-    assert (0 < lbl[1] < h), "y value should be in range of 0 and height of image"
+    assert (0 <= lbl[0] <= w), "x value should be in range of 0 and width of image"
+    assert (0 <= lbl[1] <= h), "y value should be in range of 0 and height of image"
 
     return
 
@@ -91,12 +91,14 @@ class Augmentor(object):
         h, w = out_img.shape
 
         # update the label based movement and scale
-        new_label = []
         x = label[0] * s
         y = label[1] * s
         w = label[2] * s
         h = label[3] * s
         a = label[4]
+
+        x = np.clip(x, 0, w)
+        y = np.clip(y, 0, h)
 
         return out_img, [x, y, w, h, a]
 
@@ -296,7 +298,7 @@ class Augmentor(object):
         ly = lbl[1]
         lw = lbl[2]
         lh = lbl[3]
-        la = lbl[4] * -1
+        la = 180 - lbl[4]
 
         return img, [lx, ly, lw, lh, la]
 

@@ -1,9 +1,10 @@
 import os
-import numpy as np
-from config import config
-from xml.etree import ElementTree
-from utils import rf, ri, create_noisy_video
+
 import cv2
+import numpy as np
+
+from config import config
+from utils import rf, ri, create_noisy_video
 
 
 def assert_it(img, lbl):
@@ -67,7 +68,7 @@ class Augmentor(object):
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     self.frames.append(frame)
 
-            cap.release(); break
+            cap.release()
 
         print("In total {} frames loaded".format(len(self.frames)))
 
@@ -91,16 +92,16 @@ class Augmentor(object):
         h, w = out_img.shape
 
         # update the label based movement and scale
-        x = label[0] * s
-        y = label[1] * s
-        w = label[2] * s
-        h = label[3] * s
-        a = label[4]
+        lx = label[0] * s
+        ly = label[1] * s
+        lw = label[2] * s
+        lh = label[3] * s
+        la = label[4]
 
-        x = np.clip(x, 0, w)
-        y = np.clip(y, 0, h)
+        lx = np.clip(lx, 0, w)
+        ly = np.clip(ly, 0, h)
 
-        return out_img, [x, y, w, h, a]
+        return out_img, [lx, ly, lw, lh, la]
 
     def addReflection(self, in_img):
         """

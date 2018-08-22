@@ -1,8 +1,8 @@
-import os
 from random import shuffle
 from xml.etree import ElementTree
-import csv
+
 from utils import *
+
 
 def process_data(original_path, portion):
     """
@@ -97,5 +97,5 @@ def saveCSV(data_list, output_name, save_path):
     print("{0} has been successfully saved on {1}".format(output_name, save_path))
 
 if __name__ == "__main__":
-    process_data("data/Original-data", [0.94, 0.06])
+    process_data("data/Original-data", [0.9, 0.1])
     print("done...")

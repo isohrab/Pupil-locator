@@ -1,10 +1,15 @@
 config = dict()
+# There are 342176 images in train set
+# There are 38019 images in validation set
+config["total_train"] = 342176
+config["total_test"] = 38019
 config["batch_size"] = 64
-config["total_steps"] = 400000
-config["validate_every"] = 5000
-config["validate_for"] = 400
+
+config["validate_every"] = int(config["total_train"] / config["batch_size"])  # Usually equal to one epoch
+config["validate_for"] = int(config["total_test"] / config["batch_size"])
 config["save_every"] = 3 * config["validate_every"]
-config["n_epochs"] = 50
+
+config["total_steps"] = config["validate_every"] * 80  # number of epochs
 
 config["n_filters"] =    [16, 32, 128, 128, 256, 256]
 config["filter_sizes"] = [3, 3  , 3  , 3  , 3  , 3]
@@ -14,15 +19,18 @@ config["fc_layers"] = [256, 128]
 # check layer size >>    [96, 48, 24, 12 , ]
 config["learning_rate"] = [0.001, 0.0009, 0.0006, 0.0003, 0.0001, 0.00005, 0.00001]
 config["decay_rate"] = 0.96
+
 # Usually decay every half of epochs
-config["decay_step"] = 40000
+config["decay_step"] = 5 * config["validate_every"]
 config["optimizer"] = "RMSProb"
 config["keep_prob"] = 0.75
 config["MAX_GRADIANT_NORM"] = 5.0
+
 # input info
-config["input_width"] = 192
-config["input_height"] = 192
+config["input_width"] = 384
+config["input_height"] = 384
 config["input_channel"] = 1
+
 # Output shape
 config["output_dim"] = 5
 config["output_weights"] = [2.0, 2.0, 1.0, 1.0, 0.5]
@@ -32,9 +40,9 @@ config["prob_upscale"] = 0.75
 config["max_upscale"] = 1.2
 config["min_upscale"] = 2
 
-config["prob_reflection"] = 0.75
-config["min_reflection"] = 0.35
-config["max_reflection"] = 0.85
+config["prob_reflection"] = 0.5
+config["min_reflection"] = 0.15
+config["max_reflection"] = 0.5
 
 config["prob_blur"] = 0.25
 config["min_blurSize"] = 3
@@ -61,7 +69,4 @@ config["crop_max_ratio"] = 0.95
 config["flip_probability"] = 0.5
 
 # L2 regularization
-config["l2_beta"] = 0.005
-# VOC configs
-config["voc_outputs"] = 21
-
+config["l2_beta"] = 0.0005

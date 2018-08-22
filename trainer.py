@@ -1,13 +1,14 @@
-import tensorflow as tf
 import argparse
-from models import Simple, NASNET, Inception, GAP, YOLO
-from config import config
-from batchizer import Batchizer
-from tqdm import tqdm
-from utils import *
-from logger import Logger
+
 import numpy as np
+import tensorflow as tf
+from tqdm import tqdm
+
 from augmentor import Augmentor
+from batchizer import Batchizer
+from logger import Logger
+from models import Simple, NASNET, Inception, GAP, YOLO
+from utils import *
 
 
 def create_model(session, m_type, m_name, logger):
@@ -179,9 +180,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "inception_test"
+    model_name = "INC2A3B4H2"
     model_type = "INC"
-    model_comment = "Inception half with l2 without augmentation for purifing invalid data"
+    model_comment = "Inception 0.25 with l2=0.0005 and drp=0.75. with new cleaned data"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")

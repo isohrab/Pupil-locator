@@ -1,7 +1,10 @@
 import os
-import numpy as np
+
 import cv2
+import numpy as np
+
 from config import config
+
 
 def check_dir(path):
     if not os.path.exists(path):
@@ -124,11 +127,11 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
             img = np.asarray(img, dtype=np.uint8)
 
         if with_label:
-            img = annotator((220, 0, 0), img, *label)
+            img = annotator((0, 250, 0), img, *label)
             font = cv2.FONT_HERSHEY_PLAIN
             texts = i[0].split("/")
             text = texts[2] + "/" + texts[3] + "/" + texts[4]
-            img = cv2.putText(img, text, (5, 10), font, 0.6, (250, 0, 0), 1, cv2.LINE_8)
+            img = cv2.putText(img, text, (5, 10), font, 0.8, (0, 250, 0), 1, cv2.LINE_8)
         else:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 

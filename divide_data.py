@@ -11,8 +11,6 @@ def process_data(original_path, portion):
     :param portion: portion of train, valid, test set as array [0.85,0.15]
     :return:
     """
-    if not os.path.isdir(original_path):
-        raise FileNotFoundError
 
     # list all bmp files and labels
     # load all image names into the list
@@ -33,7 +31,7 @@ def process_data(original_path, portion):
     for s in subjects_folders:
         images_list.extend([os.path.join(s, f)
                             for f in os.listdir(s)
-                            if f.endswith(".jpg")])
+                            if f.endswith(".bmp")])
         labels_list.extend([os.path.join(s, f)
                             for f in os.listdir(s)
                             if f.endswith(".xml")])

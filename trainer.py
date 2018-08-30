@@ -1,6 +1,5 @@
 import argparse
 
-import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
@@ -46,16 +45,12 @@ def print_predictions(result, logger):
         img_path = r[2]
 
         logger.log("Path: " + img_path)
-        logger.log("truth: {0:2.2f} {1:2.2f} {2:2.2f} {3:2.2f} {4:2.2f}".format(y[0],
-                                                                                y[1],
-                                                                                y[2],
-                                                                                y[3],
-                                                                                y[4]))
-        logger.log("pred : {0:2.2f} {1:2.2f} {2:2.2f} {3:2.2f} {4:2.2f}\n".format(pred[0],
-                                                                                  pred[1],
-                                                                                  pred[2],
-                                                                                  pred[3],
-                                                                                  pred[4]))
+        logger.log("truth: {0:2.2f} {1:2.2f} {2:2.2f}".format(y[0],
+                                                              y[1],
+                                                              y[2]))
+        logger.log("pred : {0:2.2f} {1:2.2f} {2:2.2f}\n".format(pred[0],
+                                                                pred[1],
+                                                                pred[2]))
 
 
 def main(model_type, model_name, logger):
@@ -117,7 +112,6 @@ def main(model_type, model_name, logger):
                         if model.global_step.eval() % config["validate_every"] == 0:
                             break
 
-
                 valid_counter = 0
                 pred_result = []
                 with tqdm(total=config["validate_for"], unit="batch") as t:
@@ -127,7 +121,6 @@ def main(model_type, model_name, logger):
 
                         batch_loss, _, pred = model.eval(sess, x, y)
                         valid_loss.append(batch_loss)
-
 
                         t.set_description_str("batch_loss:{0:2.8f}".format(batch_loss))
                         valid_counter += 1
@@ -180,9 +173,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "INC2A3B4H2"
+    model_name = "inc-test"
     model_type = "INC"
-    model_comment = "Inception 0.25 with l2=0.0005 and drp=0.75. with new cleaned data"
+    model_comment = "inception 1/4. 3A 4B 4C no Att. l2=0.0001. drp=0.75. xyw label. New reflection. 192 size"
 
     logger = Logger(model_type, model_name, model_comment, config, dir="models/")
     logger.log("Start training model...")

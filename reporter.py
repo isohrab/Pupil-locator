@@ -216,7 +216,7 @@ def rescale(image):
     h_pad = int((config["input_width"] - scaled_image.shape[0]) / 2)
 
     # create a new image with size of: (config["image_width"], config["image_height"])
-    new_image = np.zeros((config["input_width"], config["input_height"]), dtype=np.uint8)
+    new_image = np.ones((config["input_width"], config["input_height"]), dtype=np.uint8) * 250
 
     # put the scaled image in the middle of new image
     new_image[h_pad:h_pad + scaled_image.shape[0], w_pad:w_pad + scaled_image.shape[1]] = scaled_image
@@ -296,7 +296,7 @@ def video_creator(video_name, images, labels, fps=15):
     for img, lbl in zip(images, labels):
         img = np.squeeze(img)
         img = gray_denormalizer(img)
-        annotated_img = annotator((220, 0, 0), img, *lbl)
+        annotated_img = annotator((0, 250, 0), img, *lbl)
         video.write(annotated_img)
 
     cv2.destroyAllWindows()
@@ -432,12 +432,12 @@ def main(m_type, m_name, logger):
                     dataset_results[dataset_name].extend(diff)
                     t.update()
 
-                #     # add images and predicted labels to test_images and pred_labels to creating the video
-                #     test_images.extend(images)
-                #     pred_labels.extend(predictions)
-                #
-                # # create the predicted labels on test sets
-                # video_creator(dataset_name, test_images, pred_labels)
+                    # add images and predicted labels to test_images and pred_labels to creating the video
+                    test_images.extend(images)
+                    pred_labels.extend(predictions)
+
+                # create the predicted labels on test sets
+                video_creator(dataset_name, test_images, pred_labels)
 
         # save the results in a dic
         dataset_errors = {}
@@ -451,69 +451,69 @@ def main(m_type, m_name, logger):
 
         print_resutls(dataset_errors, pixel_errors, dataset_names)
 
-        print("####### LPW #######")
-        # run model on LPW dataset
-        lpw_results = {}
-        lpw_r = lpw_reader(batch_size=2 * config["batch_size"], normalize_image=True)
-        for imgs, truths, d_name, shapes in lpw_r:
-            # add dataset name to results dict
-            if d_name not in lpw_results.keys():
-                lpw_results[d_name] = []
+        # print("####### LPW #######")
+        # # run model on LPW dataset
+        # lpw_results = {}
+        # lpw_r = lpw_reader(batch_size=2 * config["batch_size"], normalize_image=True)
+        # for imgs, truths, d_name, shapes in lpw_r:
+        #     # add dataset name to results dict
+        #     if d_name not in lpw_results.keys():
+        #         lpw_results[d_name] = []
+        #
+        #     predictions = model.predict(sess, imgs)
+        #
+        #     upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
+        #
+        #     # calculate the difference
+        #     a = upscale_preds_x - truths[:, 0]
+        #     b = upscale_preds_y - truths[:, 1]
+        #
+        #     diff = np.sqrt((a * a + b * b))
+        #
+        #     lpw_results[d_name].extend(diff)
+        #
+        # lpw_errors = {}
+        #
+        # for key, val in lpw_results.items():
+        #     lpw_errors[key] = []
+        #     for e in pixel_errors:
+        #         d = np.asarray(val, dtype=np.float32)
+        #         acc = np.mean(np.asarray(d < e, dtype=np.int))
+        #         lpw_errors[key].append(acc)
+        #
+        # print_resutls(lpw_errors, pixel_errors)
 
-            predictions = model.predict(sess, imgs)
-
-            upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
-
-            # calculate the difference
-            a = upscale_preds_x - truths[:, 0]
-            b = upscale_preds_y - truths[:, 1]
-
-            diff = np.sqrt((a * a + b * b))
-
-            lpw_results[d_name].extend(diff)
-
-        lpw_errors = {}
-
-        for key, val in lpw_results.items():
-            lpw_errors[key] = []
-            for e in pixel_errors:
-                d = np.asarray(val, dtype=np.float32)
-                acc = np.mean(np.asarray(d < e, dtype=np.int))
-                lpw_errors[key].append(acc)
-
-        print_resutls(lpw_errors, pixel_errors)
-
-        print("####### SWIRSKI #######")
-        # run model on LPW dataset
-        swk_results = {}
-        swk_r = swirski_reader(batch_size=2 * config["batch_size"])
-        for imgs, truths, d_name, shapes in swk_r:
-            # add dataset name to results dict
-            if d_name not in swk_results.keys():
-                swk_results[d_name] = []
-
-            predictions = model.predict(sess, imgs)
-
-            upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
-
-            # calculate the difference
-            a = upscale_preds_x - truths[:, 0]
-            b = upscale_preds_y - truths[:, 1]
-
-            diff = np.sqrt((a * a + b * b))
-
-            swk_results[d_name].extend(diff)
-
-        swk_errors = {}
-
-        for key, val in swk_results.items():
-            swk_errors[key] = []
-            for e in pixel_errors:
-                d = np.asarray(val, dtype=np.float32)
-                acc = np.mean(np.asarray(d < e, dtype=np.int))
-                swk_errors[key].append(acc)
-
-        print_resutls(swk_errors, pixel_errors)
+        # print("####### SWIRSKI #######")
+        # # run model on LPW dataset
+        # swk_results = {}
+        # swk_r = swirski_reader(batch_size=2 * config["batch_size"])
+        # for imgs, truths, d_name, shapes in swk_r:
+        #     # add dataset name to results dict
+        #     if d_name not in swk_results.keys():
+        #         swk_results[d_name] = []
+        #
+        #     predictions = model.predict(sess, imgs)
+        #
+        #     upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
+        #
+        #     # calculate the difference
+        #     a = upscale_preds_x - truths[:, 0]
+        #     b = upscale_preds_y - truths[:, 1]
+        #
+        #     diff = np.sqrt((a * a + b * b))
+        #
+        #     swk_results[d_name].extend(diff)
+        #
+        # swk_errors = {}
+        #
+        # for key, val in swk_results.items():
+        #     swk_errors[key] = []
+        #     for e in pixel_errors:
+        #         d = np.asarray(val, dtype=np.float32)
+        #         acc = np.mean(np.asarray(d < e, dtype=np.int))
+        #         swk_errors[key].append(acc)
+        #
+        # print_resutls(swk_errors, pixel_errors)
 
 
 if __name__ == "__main__":
@@ -535,7 +535,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "INC2A3B4H2"
+    model_name = "inc-test"
     model_type = args.model_type
     model_type = "INC"
 

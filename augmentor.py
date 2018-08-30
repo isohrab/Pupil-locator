@@ -55,16 +55,12 @@ class Augmentor(object):
         for video in videos_fn:
             print("loading video {}".format(video))
             cap = cv2.VideoCapture(video)
-            ret, frame = cap.read()
-            frame = frame[100:, 50:]
-            frame = cv2.resize(frame, (self.cfg["input_height"], self.cfg["input_width"]))
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            self.frames.append(frame)
+            ret = True
             while ret:
                 ret, frame = cap.read()
                 if ret:
                     frame = frame[100:, 50:]
-                    frame = cv2.resize(frame, (self.cfg["input_height"], self.cfg["input_width"]))
+                    frame = cv2.resize(frame, (2 * self.cfg["input_height"], 2 * self.cfg["input_width"]))
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     self.frames.append(frame)
 
@@ -72,36 +68,44 @@ class Augmentor(object):
 
         print("In total {} frames loaded".format(len(self.frames)))
 
-    def upscale(self, img, label):
-        """
-        upscale the input image. the default input image size is 192x192.
-        we upscale it with random scale factor to maximum of 2.2. Consequencly upscale
-        the label too.
-        :param img: the input image
-        :param label: the label of image (x,y,w,h,a)
-        :return: scaled image with filled black border
-        """
+    def downscale(self, img, label):
+
         # should we upscale the input image?
-        if self.cfg["prob_upscale"] < rf(0, 1):
+        if self.cfg["prob_downscale"] < rf(0, 1):
             return img, label
 
         # get a random scale value
-        s = rf(self.cfg["max_upscale"], self.cfg["min_upscale"])
+        s = rf(self.cfg["min_downscale"], self.cfg["max_downscale"])
         out_img = cv2.resize(img, dsize=(0, 0), fx=s, fy=s)
 
-        h, w = out_img.shape
+        # get a random frame as background
+        idx = ri(0, len(self.frames))
+        bg = self.frames[idx]
+        bg = cv2.resize(bg, dsize=(config["input_height"], config["input_width"]))
+
+        # put scaled image somewhere in the background
+        h, w = img.shape
+        s_h, s_w = out_img.shape
+
+        dw = w - s_w
+        dh = h - s_h
+
+        # random location
+        rx = ri(0, dw)
+        ry = ri(0, dh)
+
+        # put it on the background frame
+        bg[ry:ry + s_h, rx:rx + s_w] = out_img
 
         # update the label based movement and scale
-        lx = label[0] * s
-        ly = label[1] * s
+        lx = label[0] * s + rx
+        ly = label[1] * s + ry
         lw = label[2] * s
-        lh = label[3] * s
-        la = label[4]
 
         lx = np.clip(lx, 0, w)
         ly = np.clip(ly, 0, h)
 
-        return out_img, [lx, ly, lw, lh, la]
+        return bg, [lx, ly, lw]
 
     def addReflection(self, in_img):
         """
@@ -115,28 +119,19 @@ class Augmentor(object):
 
         # randomly select a reflection from frames
         idx = ri(0, len(self.frames))
-        ref = self.frames[idx]
+        frame = self.frames[idx]
 
-        # add exposure to the frame
-        ref = self.addExposure(ref)
-
-        h, w = in_img.shape
-        rh, rw = ref.shape
-
-        # get difference
-        dw = rw - w
-        dh = rh - h
-
-        # get a random point between 0 and difference in each axis
-        px = ri(0, dw)
-        py = ri(0, dh)
-
-        # slice the reflection frame into new image
-        new_ref = ref[py:py + h, px:px + w]
+        sx = ri(0, config["input_width"])
+        sy = ri(0, config["input_height"])
+        ref = frame[sy:sy + config["input_height"], sx:sx + config["input_width"]]
 
         # choose a random weight
-        beta = rf(self.cfg["min_reflection"], self.cfg["max_reflection"])
-        res = in_img + beta * (255.0 - in_img) * (new_ref / 255.0)
+        max_beta = rf(self.cfg["min_reflection"], self.cfg["max_reflection"])
+        beta = ref / 255
+        neg = (in_img / 255) - 0.75
+        beta = beta + neg
+        beta = np.clip(beta, 0, max_beta)
+        res = in_img + beta * (255.0 - in_img) * (ref / 255.0)
         return np.asarray(res, dtype=np.uint8)
 
     def addBlur(self, in_img):
@@ -226,15 +221,13 @@ class Augmentor(object):
         lx = lbl[0]
         ly = lbl[1]
         lw = lbl[2]
-        lh = lbl[3]
-        la = lbl[4]
 
         # find pupil upper right corner and bottom left corner to check if
         # it is in the cropped image or not, we consider pupil is circle and use only width
         px1 = lx - lw / 2
-        py1 = ly - lh / 2
+        py1 = ly - lw / 2
         px2 = lx + lw / 2
-        py2 = ly + lh / 2
+        py2 = ly + lw / 2
         # check if pupil location is not outside of the image
         px1, py1, px2, py2 = np.clip([px1, py1, px2, py2], 0, w)
 
@@ -275,7 +268,16 @@ class Augmentor(object):
             lx = lx - cx1
             ly = ly - cy1
 
-            return image, [lx, ly, lw, lh, la]
+            # resize back to input size
+            image = cv2.resize(image, dsize=(config["input_height"], config["input_width"]))
+
+            # update the labels
+            s = config["input_width"] / crop_size
+            lx = lx * s
+            ly = ly * s
+            lw = lw * s
+
+            return image, [lx, ly, lw]
 
         # if we are here, no crop applied
         return img, lbl
@@ -298,10 +300,8 @@ class Augmentor(object):
         lx = w - lbl[0]
         ly = lbl[1]
         lw = lbl[2]
-        lh = lbl[3]
-        la = 180 - lbl[4]
 
-        return img, [lx, ly, lw, lh, la]
+        return img, [lx, ly, lw]
 
     def resize_it(self, img, lbl):
         """
@@ -341,20 +341,23 @@ class Augmentor(object):
         c_label = list(np.array(in_label, copy=True))
 
         # apply noise
+
+        # c_img = self.addExposure(c_img)
+
         c_img, c_label = self.flip_it(c_img, c_label)
-        assert_it(c_img, c_label)
-
-        c_img, c_label = self.upscale(c_img, c_label)
-        assert_it(c_img, c_label)
-
+        # assert_it(c_img, c_label)
+        #
+        c_img, c_label = self.downscale(c_img, c_label)
+        # assert_it(c_img, c_label)
+        #
         c_img, c_label = self.crop_it(c_img, c_label)
-        assert_it(c_img, c_label)
-
+        # assert_it(c_img, c_label)
+        #
         c_img = self.addReflection(c_img)
-        assert_it(c_img, c_label)
+        # assert_it(c_img, c_label)
 
-        c_img, c_label = self.resize_it(c_img, c_label)
-        assert_it(c_img, c_label)
+        # c_img, c_label = self.resize_it(c_img, c_label)
+        # assert_it(c_img, c_label)
 
         return c_img, c_label
 
@@ -372,7 +375,7 @@ if __name__ == "__main__":
     # true_label = [x, y, w, h]
 
     ag = Augmentor('data/noisy_videos/', config)
-    create_noisy_video(length=200, fps=1, with_label=True, augmentor=ag)
+    create_noisy_video(length=50, fps=1, with_label=True, augmentor=ag)
 
     # pil_img = Image.fromarray(annotator(scaled_img, *scaled_label))
     # pil_img.show()

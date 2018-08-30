@@ -64,9 +64,10 @@ class BaseModel(object):
             trainable_params = tf.trainable_variables()
 
             opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate,
-                                            decay=0.9,
+                                            decay=0.99,
                                             momentum=0.9,
                                             epsilon=1.0)
+            # opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
 
             # Compute gradients of loss w.r.t. all trainable variables
             gradients = tf.gradients(self.final_loss, trainable_params)

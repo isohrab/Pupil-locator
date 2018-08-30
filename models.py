@@ -351,8 +351,8 @@ class Inception(BaseModel):
         self.summary_op = tf.summary.merge_all()
 
     def bn_lrelu(self, x, train_logical):
-        x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.9997, scale=True)
-        x = tf.nn.leaky_relu(x, alpha=0.07)
+        x = tf.layers.batch_normalization(x, training=train_logical, momentum=0.9997, scale=True, center=True)
+        x = tf.nn.leaky_relu(x, alpha=0.17)
         return x
 
     # Inception Block A
@@ -368,7 +368,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_0a_1x1")
 
                 branch_0 = self.bn_lrelu(branch_0, is_training)
@@ -382,7 +381,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -393,7 +391,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_1b_3x3")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -406,7 +403,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_2a_1x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -417,7 +413,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_2b_3x3")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -428,7 +423,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_2c_3x3")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -447,7 +441,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_3b_1x1")
                 branch_3 = self.bn_lrelu(branch_3, is_training)
 
@@ -466,7 +459,6 @@ class Inception(BaseModel):
                                             padding='VALID',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_0a_3x3V2")
 
                 branch_0 = self.bn_lrelu(branch_0, is_training)
@@ -480,7 +472,6 @@ class Inception(BaseModel):
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_1a_1x1")
 
                 branch_1 = self.bn_lrelu(branch_1, is_training)
@@ -492,7 +483,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2_1b_3x3")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -503,7 +493,6 @@ class Inception(BaseModel):
                                             padding="VALID",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2_1c_3x3V2")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -530,7 +519,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_0a_1x1")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -543,7 +531,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -554,7 +541,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_1b_1x7")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -565,7 +551,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_1c_7x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -578,7 +563,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2_2a_1x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -589,7 +573,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_2b_1x7")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -600,7 +583,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_2c_7x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -611,7 +593,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_2d_1x7")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -622,7 +603,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_2e_7x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -641,7 +621,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_3b_1x1")
                 branch_3 = self.bn_lrelu(branch_3, is_training)
 
@@ -660,7 +639,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_0a_1x1")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -671,7 +649,6 @@ class Inception(BaseModel):
                                             padding="VALID",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_0b_3x3V2")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -684,7 +661,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -695,7 +671,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_1b_1x7")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -706,7 +681,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_1c_7x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -717,7 +691,6 @@ class Inception(BaseModel):
                                             padding="VALID",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_1d_3x3V2")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -744,7 +717,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_0a_1x1")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -757,7 +729,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -768,7 +739,6 @@ class Inception(BaseModel):
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
                                              kernel_initializer=xavier_initializer_conv2d(),
-                                             use_bias=False,
                                              name="conv2d_1b0_1x3")
                 branch_1a = self.bn_lrelu(branch_1a, is_training)
 
@@ -779,7 +749,6 @@ class Inception(BaseModel):
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
                                              kernel_initializer=xavier_initializer_conv2d(),
-                                             use_bias=False,
                                              name="conv2d_1b1_3x1")
                 branch_1b = self.bn_lrelu(branch_1b, is_training)
 
@@ -794,7 +763,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_2a_1x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -805,7 +773,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_2b_1x3")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -816,7 +783,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="conv2d_2c_3x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -827,7 +793,6 @@ class Inception(BaseModel):
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
                                              kernel_initializer=xavier_initializer_conv2d(),
-                                             use_bias=False,
                                              name="conv2d_2d0_1x3")
                 branch_2a = self.bn_lrelu(branch_2a, is_training)
 
@@ -838,7 +803,6 @@ class Inception(BaseModel):
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
                                              kernel_initializer=xavier_initializer_conv2d(),
-                                             use_bias=False,
                                              name="conv2d_2d1_3x1")
                 branch_2b = self.bn_lrelu(branch_2b, is_training)
 
@@ -857,7 +821,6 @@ class Inception(BaseModel):
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
                                             kernel_initializer=xavier_initializer_conv2d(),
-                                            use_bias=False,
                                             name="Conv2d_3b_1x1")
                 branch_3 = self.bn_lrelu(branch_3, is_training)
 
@@ -877,7 +840,6 @@ class Inception(BaseModel):
                                    padding="VALID",
                                    kernel_regularizer=self.l2_reg,
                                    kernel_initializer=xavier_initializer_conv2d(),
-                                   use_bias=False,
                                    name="conv2d_stem0_3x3V2")
             net = self.bn_lrelu(net, self.train_flag)
             self.logger.log("stem0 shape {}".format(net.get_shape()))
@@ -889,7 +851,6 @@ class Inception(BaseModel):
                                    padding="VALID",
                                    kernel_regularizer=self.l2_reg,
                                    kernel_initializer=xavier_initializer_conv2d(),
-                                   use_bias=False,
                                    name="conv2d_stem1_3x3V1")
             net = self.bn_lrelu(net, self.train_flag)
             self.logger.log("stem1 shape {}".format(net.get_shape()))
@@ -901,7 +862,6 @@ class Inception(BaseModel):
                                    padding="SAME",
                                    kernel_regularizer=self.l2_reg,
                                    kernel_initializer=xavier_initializer_conv2d(),
-                                   use_bias=False,
                                    name="Conv2d_stem2_3x3")
             net = self.bn_lrelu(net, self.train_flag)
             self.logger.log("stem2 shape {}".format(net.get_shape()))
@@ -915,7 +875,6 @@ class Inception(BaseModel):
                                              padding="VALID",
                                              kernel_regularizer=self.l2_reg,
                                              kernel_initializer=xavier_initializer_conv2d(),
-                                             use_bias=False,
                                              name="Conv2d_0a_3x3s2")
                     net_a = self.bn_lrelu(net_a, self.train_flag)
 
@@ -939,7 +898,6 @@ class Inception(BaseModel):
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
                                                 kernel_initializer=xavier_initializer_conv2d(),
-                                                use_bias=False,
                                                 name="Conv2d_0a_3x3")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -950,7 +908,6 @@ class Inception(BaseModel):
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
                                                 kernel_initializer=xavier_initializer_conv2d(),
-                                                use_bias=False,
                                                 name="Conv2d_0b_7x1")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -961,7 +918,6 @@ class Inception(BaseModel):
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
                                                 kernel_initializer=xavier_initializer_conv2d(),
-                                                use_bias=False,
                                                 name="Conv2d_0c_1x7")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -972,7 +928,6 @@ class Inception(BaseModel):
                                                 padding="VALID",
                                                 kernel_regularizer=self.l2_reg,
                                                 kernel_initializer=xavier_initializer_conv2d(),
-                                                use_bias=False,
                                                 name="Conv2d_0d_3x3V")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -985,7 +940,6 @@ class Inception(BaseModel):
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
                                                 kernel_initializer=xavier_initializer_conv2d(),
-                                                use_bias=False,
                                                 name="Conv2d_0a_3x3")
                     branch_1 = self.bn_lrelu(branch_1, self.train_flag)
 
@@ -996,7 +950,6 @@ class Inception(BaseModel):
                                                 padding="VALID",
                                                 kernel_regularizer=self.l2_reg,
                                                 kernel_initializer=xavier_initializer_conv2d(),
-                                                use_bias=False,
                                                 name="Conv2d_0b_3x3V")
                     branch_1 = self.bn_lrelu(branch_1, self.train_flag)
 
@@ -1013,7 +966,6 @@ class Inception(BaseModel):
                                                 padding="VALID",
                                                 kernel_regularizer=self.l2_reg,
                                                 kernel_initializer=xavier_initializer_conv2d(),
-                                                use_bias=False,
                                                 name="Conv2d_0a_3x3v")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -1042,19 +994,6 @@ class Inception(BaseModel):
             net = self.block_a_reduction(net, "Reduction_A", self.train_flag)
             self.logger.log("Reduction_A shape {}".format(net.get_shape()))
 
-            # # [batch, H, W, C]
-            # b, h, w, c = net.get_shape()
-            #
-            # spatial = tf.reduce_mean(net, axis=-1, name="spatial")
-            # self.logger.log("spatial shape {}".format(spatial.get_shape()))
-            #
-            # spatial = tf.reshape(spatial, shape=(-1, h * w), name="spatial2d")
-            #
-            # # create an attention layer based on spatial results with tanh activation
-            # self.attention = tf.layers.dense(spatial, self.m*1024, activation=tf.nn.tanh, use_bias=False,
-            #                                  kernel_initializer=tf.contrib.layers.xavier_initializer(),
-            #                                  kernel_regularizer=self.l2_reg,
-            #                                  name="Attention")
 
             # Block B: 4x
             net = self.block_b(net, "Block_B0", self.train_flag)
@@ -1069,39 +1008,39 @@ class Inception(BaseModel):
             net = self.block_b(net, "Block_B3", self.train_flag)
             self.logger.log("Block_B3 shape {}".format(net.get_shape()))
 
+            # Block B reducttion
+            net = self.block_b_reduction(net, "Reduction_B", self.train_flag)
+            self.logger.log("Reduction_B shape {}".format(net.get_shape()))
+
+            # Block C: 4x
+            net = self.block_c(net, "Block_C0", self.train_flag)
+            self.logger.log("Block_C0 shape {}".format(net.get_shape()))
+
+            net = self.block_c(net, "Block_C1", self.train_flag)
+            self.logger.log("Block_C1 shape {}".format(net.get_shape()))
+
+            net = self.block_c(net, "Block_C2", self.train_flag)
+            self.logger.log("Block_C1 shape {}".format(net.get_shape()))
+
+            net = self.block_c(net, "Block_C3", self.train_flag)
+            self.logger.log("Block_C1 shape {}".format(net.get_shape()))
+
             self.GAP = tf.reduce_mean(net, axis=[1, 2], name="GAP")
             self.logger.log("GAP shape {}".format(self.GAP.get_shape()))
 
             self.GAP = tf.nn.dropout(self.GAP, self.keep_prob, name="GAP_dropout")
 
-            # self.GAP = tf.multiply(self.GAP, self.attention, name="Gap_Attention")
-
-            # # Block B reducttion
-            # net = self.block_b_reduction(net, "Reduction_B", self.train_flag)
-            # self.logger.log("Reduction_B shape {}".format(net.get_shape()))
-
-            # Block C: 2x
-            # net = self.block_c(net, "Block_C0", self.train_flag)
-            # self.logger.log("Block_C0 shape {}".format(net.get_shape()))
-            #
-            # net = self.block_c(net, "Block_C1", self.train_flag)
-            # self.logger.log("Block_C1 shape {}".format(net.get_shape()))
-            #
-            # self.GAP = tf.reduce_mean(net, axis=[1, 2], name="GAP")
-            # self.logger.log("GAP shape {}".format(self.GAP.get_shape()))
-
-            # # self.logits = tf.reshape(cnn_input, shape=(-1, self.cfg["output_dim"]))
             # Final layer
             units = self.GAP.get_shape().as_list()[1]
             net = tf.reshape(self.GAP, (-1, 1, 1, units), name="reshaping")
             net = tf.layers.conv2d(net, self.cfg["output_dim"], (1, 1),
-                                   padding='SAME',
+                                   padding='VALID',
                                    kernel_initializer=xavier_initializer_conv2d(),
                                    kernel_regularizer=self.l2_reg,
                                    use_bias=False,
                                    name="final_conv")
 
-            net = tf.nn.leaky_relu(net, alpha=0.07)
+            net = tf.nn.relu(net, name="logits_relu")
             self.logger.log("Final layer {}: {}".format("Logits", net.get_shape()))
 
             # Logits
@@ -1110,7 +1049,7 @@ class Inception(BaseModel):
             self.loss = tf.losses.huber_loss(labels=self.Y,
                                              predictions=self.logits,
                                              weights=[self.cfg["output_weights"][0:self.cfg["output_dim"]]],
-                                             delta=3.0)
+                                             delta=1.0)
 
             # Training summary for the current batch_loss
             tf.summary.scalar('loss', self.loss)

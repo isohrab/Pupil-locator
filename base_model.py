@@ -64,7 +64,7 @@ class BaseModel(object):
             trainable_params = tf.trainable_variables()
 
             opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate,
-                                            decay=0.99,
+                                            decay=0.9,
                                             momentum=0.9,
                                             epsilon=1.0)
             # opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)

@@ -342,7 +342,7 @@ class Inception(BaseModel):
 
     def __init__(self, model_name, cfg, logger):
         super(Inception, self).__init__(model_name, cfg, logger)
-        self.m = 0.25
+        self.m = 0.5
         self.l2_reg = l2_regularizer(cfg["l2_beta"])
         self.logger.log("building the model...")
         self.init_placeholders()

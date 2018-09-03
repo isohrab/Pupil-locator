@@ -189,6 +189,46 @@ class Augmentor(object):
 
         return in_img
 
+    def addPupil(self, _img, _lbl, max_attemps=100):
+        """
+        Add a pupil like ellipse on the image.
+        :param _img:
+        :param _lbl:
+        :return:
+        """
+        if self.cfg["prob_pupil"] < rf(0, 1):
+            return _img
+
+        x = _lbl[0]
+        y = _lbl[1]
+        w = _lbl[2]
+
+        attemps = 0
+
+        while attemps < max_attemps:
+            attemps += 1
+            # choose randomly new location
+            lx = ri(0, self.cfg["input_width"])
+            ly = ri(0, self.cfg["input_height"])
+            lw = ri(w / 2, w * 1.2)
+            lh = ri(w / 2, w * 1.5)
+            la = ri(0, 180)
+            # calculate the distance between real pupil and this, not overlapping
+            d = np.sqrt((x - lx) ** 2 + (y - ly) ** 2)
+            if d < w:
+                continue
+
+            # get the color of new pupil based on current pupil
+            c = int(_img[int(y), int(x)])
+            c = ri(c * 0.7, c * 1.2)
+            # draw an ellipse on the image
+            img = cv2.ellipse(_img, ((lx, ly), (lw, lh), la), (c), -1)
+
+            return img
+
+        # if we are here, max_attmeps reached
+        return _img
+
     def addExposure(self, in_img):
         """
         Add exposure to image
@@ -341,8 +381,9 @@ class Augmentor(object):
         c_label = list(np.array(in_label, copy=True))
 
         # apply noise
+        c_img = self.addPupil(c_img, c_label)
 
-        # c_img = self.addExposure(c_img)
+        c_img = self.addExposure(c_img)
 
         c_img, c_label = self.flip_it(c_img, c_label)
         # assert_it(c_img, c_label)

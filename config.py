@@ -22,9 +22,13 @@ config["decay_rate"] = 0.96
 
 # Usually decay every half of epochs
 config["decay_step"] = 5 * config["validate_every"]
+
+# OPTIMIZATION
 config["optimizer"] = "RMSProb"
 config["keep_prob"] = 0.75
 config["MAX_GRADIANT_NORM"] = 5.0
+# L2 regularization
+config["l2_beta"] = 0.0001
 
 # input info
 config["input_width"] = 192
@@ -35,12 +39,12 @@ config["input_channel"] = 1
 config["output_dim"] = 3
 config["output_weights"] = [1.0, 1.0, 1.0, 1.0, 0.5]
 
-# Augmenation parameters
+# Augmentation parameters
 config["prob_downscale"] = 0.5
 config["max_downscale"] = 0.95
 config["min_downscale"] = 0.75
 
-config["prob_reflection"] = 0.9
+config["prob_reflection"] = 0.95
 config["min_reflection"] = 0.5
 config["max_reflection"] = 0.75
 
@@ -68,5 +72,5 @@ config["crop_max_ratio"] = 0.95
 # flip image
 config["flip_probability"] = 0.5
 
-# L2 regularization
-config["l2_beta"] = 0.0001
+# add Pupil
+config["prob_pupil"] = 0.5

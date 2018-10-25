@@ -1008,27 +1008,27 @@ class Inception(BaseModel):
             net = self.block_b(net, "Block_B3", self.train_flag)
             self.logger.log("Block_B3 shape {}".format(net.get_shape()))
 
-            # Block B reducttion
-            net = self.block_b_reduction(net, "Reduction_B", self.train_flag)
-            self.logger.log("Reduction_B shape {}".format(net.get_shape()))
+            # # Block B reducttion
+            # net = self.block_b_reduction(net, "Reduction_B", self.train_flag)
+            # self.logger.log("Reduction_B shape {}".format(net.get_shape()))
+            #
+            # # Block C: 4x
+            # net = self.block_c(net, "Block_C0", self.train_flag)
+            # self.logger.log("Block_C0 shape {}".format(net.get_shape()))
+            #
+            # net = self.block_c(net, "Block_C1", self.train_flag)
+            # self.logger.log("Block_C1 shape {}".format(net.get_shape()))
+            #
+            # net = self.block_c(net, "Block_C2", self.train_flag)
+            # self.logger.log("Block_C1 shape {}".format(net.get_shape()))
+            #
+            # net = self.block_c(net, "Block_C3", self.train_flag)
+            # self.logger.log("Block_C1 shape {}".format(net.get_shape()))
 
-            # Block C: 4x
-            net = self.block_c(net, "Block_C0", self.train_flag)
-            self.logger.log("Block_C0 shape {}".format(net.get_shape()))
-
-            net = self.block_c(net, "Block_C1", self.train_flag)
-            self.logger.log("Block_C1 shape {}".format(net.get_shape()))
-
-            net = self.block_c(net, "Block_C2", self.train_flag)
-            self.logger.log("Block_C1 shape {}".format(net.get_shape()))
-
-            net = self.block_c(net, "Block_C3", self.train_flag)
-            self.logger.log("Block_C1 shape {}".format(net.get_shape()))
+            net = tf.nn.dropout(net, self.keep_prob, name="net_dropout")
 
             self.GAP = tf.reduce_mean(net, axis=[1, 2], name="GAP")
             self.logger.log("GAP shape {}".format(self.GAP.get_shape()))
-
-            self.GAP = tf.nn.dropout(self.GAP, self.keep_prob, name="GAP_dropout")
 
             # Final layer
             units = self.GAP.get_shape().as_list()[1]

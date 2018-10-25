@@ -5,7 +5,7 @@ from tensorflow.python.ops import control_flow_ops
 # https://github.com/WojciechMormul/yolo2/blob/master/train.py
 class BaseModel(object):
     """
-    Convolution model:
+    This class serve basic methods for other models
     """
 
     def __init__(self, model_name, cfg, logger):
@@ -48,13 +48,15 @@ class BaseModel(object):
 
     def init_optimizer(self):
         print("setting optimizer..")
+
+        # add L2 loss to main loss, do backpropagation
         self.l2_loss = tf.losses.get_regularization_loss()
         tf.summary.scalar("l2_loss", self.l2_loss)
 
         self.total_loss = tf.add(self.loss, self.l2_loss)
         tf.summary.scalar('final_loss', self.total_loss)
 
-
+        # we need to define a dependency before calculating the total_loss
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         if update_ops:
             updates = tf.group(*update_ops)
@@ -63,11 +65,7 @@ class BaseModel(object):
         with tf.control_dependencies(update_ops):
             trainable_params = tf.trainable_variables()
 
-            opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate,
-                                            decay=0.9,
-                                            momentum=0.9,
-                                            epsilon=1.0)
-            # opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+            opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
 
             # Compute gradients of loss w.r.t. all trainable variables
             gradients = tf.gradients(self.final_loss, trainable_params)
@@ -133,6 +131,12 @@ class BaseModel(object):
         return outputs[0], outputs[1], outputs[2]
 
     def predict(self, sess, images):
+        """
+        predict the label for the given images
+        :param sess: current tf.session
+        :param images: input test images
+        :return: predicted labels
+        """
         self.mode = 'test'
         # Input feeds for dropout
         input_feed = {self.X.name: images,
@@ -145,19 +149,15 @@ class BaseModel(object):
         return outputs[0]
 
     def restore(self, sess, path, var_list=None):
+        """
+        restore a model from file
+        :param sess: active (current) tf.session
+        :param path: path to saved folder
+        :param var_list: load desire variables, if none, all variables will be returned
+        :return: load model to graph
+        """
         # var_list = None returns the list of all saveable variables
         saver = tf.train.Saver(var_list)
         saver.restore(sess, save_path=path)
         self.logger.log('model restored from %s' % path)
 
-    def variable_summaries(self, var):
-        """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
-        with tf.name_scope('summaries'):
-            mean = tf.reduce_mean(var)
-            tf.summary.scalar('mean', mean)
-            with tf.name_scope('stddev'):
-                stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
-            tf.summary.scalar('stddev', stddev)
-            tf.summary.scalar('max', tf.reduce_max(var))
-            tf.summary.scalar('min', tf.reduce_min(var))
-            tf.summary.histogram('histogram', var)

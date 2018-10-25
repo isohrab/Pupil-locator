@@ -35,22 +35,23 @@ def assert_it(img, lbl):
 
 class Augmentor(object):
     """
-    add noise to the data
+    add noise to the images
     """
 
     def __init__(self, noise_dir, noise_parameters):
         self.noise_dir = noise_dir
         self.cfg = noise_parameters
 
-        # extract the noise video from folder
+        # check if the noisy videos are exist
         if not os.path.isdir(noise_dir):
             raise FileNotFoundError
 
+        # read all videos
         videos_fn = [os.path.join(self.noise_dir, f)
                      for f in os.listdir(self.noise_dir)
                      if f.endswith(".mp4")]
 
-        # load videos to memory
+        # read all frames and load them into memory
         self.frames = []
         for video in videos_fn:
             print("loading video {}".format(video))
@@ -69,7 +70,12 @@ class Augmentor(object):
         print("In total {} frames loaded".format(len(self.frames)))
 
     def downscale(self, img, label):
-
+        """
+        Downscale the input image to a random value defined in the config file
+        :param img: input image
+        :param label: input label
+        :return: return downscaled image and updated ground truth
+        """
         # should we upscale the input image?
         if self.cfg["prob_downscale"] < rf(0, 1):
             return img, label
@@ -102,6 +108,7 @@ class Augmentor(object):
         ly = label[1] * s + ry
         lw = label[2] * s
 
+        # clip the values inside the image bound (height, widht)
         lx = np.clip(lx, 0, w)
         ly = np.clip(ly, 0, h)
 
@@ -109,7 +116,7 @@ class Augmentor(object):
 
     def addReflection(self, in_img):
         """
-        add a random reflection to the image
+        Reflect a random noisy frame on the image
         :param in_img: input image
         :return: image + reflection
         """
@@ -121,11 +128,13 @@ class Augmentor(object):
         idx = ri(0, len(self.frames))
         frame = self.frames[idx]
 
+        # the size of noisy frame is bigger than input image. we choose a random location to crop the noisy
+        # frame with the size equal to input image
         sx = ri(0, config["input_width"])
         sy = ri(0, config["input_height"])
         ref = frame[sy:sy + config["input_height"], sx:sx + config["input_width"]]
 
-        # choose a random weight
+        # choose a random weight: read the paper for the details
         max_beta = rf(self.cfg["min_reflection"], self.cfg["max_reflection"])
         beta = ref / 255
         neg = (in_img / 255) - 0.75
@@ -156,8 +165,8 @@ class Augmentor(object):
         :param in_label: just use pupil location
         :return: erased image
         """
-        # if self.cfg["prob_occlusion"] < rf(0, 1):
-        #     return in_img
+        if self.cfg["prob_occlusion"] < rf(0, 1):
+            return in_img
 
         # randomly choose # object on the eye
         num_obj = ri(0, self.cfg["occlusion_max_obj"])
@@ -176,7 +185,10 @@ class Augmentor(object):
         x_area = np.clip(p_x - p_w + ri(0, p_w), 0, self.cfg["input_width"])
         y_area = np.clip(p_y - p_h + ri(0, p_h), 0, self.cfg["input_height"])
 
+        # choose a random color based the current pupil color
         occ_color = ri(245, 256)
+
+        # add object in random place close together
         for i in range(num_obj):
             obj_x = np.clip(x_area + ri(0, obj_w * 2), 0, self.cfg["input_width"] - obj_w)
             obj_y = np.clip(y_area + ri(0, obj_h * 2), 0, self.cfg["input_height"] - obj_h)
@@ -191,20 +203,22 @@ class Augmentor(object):
 
     def addPupil(self, _img, _lbl, max_attemps=100):
         """
-        Add a pupil like ellipse on the image.
-        :param _img:
-        :param _lbl:
+        Add a pupil-like ellipse on the image.
+        :param _img: input image
+        :param _lbl: use current ground truth info for new pupil
         :return:
         """
         if self.cfg["prob_pupil"] < rf(0, 1):
             return _img
 
+        # read the ground-truth info
         x = _lbl[0]
         y = _lbl[1]
         w = _lbl[2]
 
         attemps = 0
 
+        # try this # max_attemos
         while attemps < max_attemps:
             attemps += 1
             # choose randomly new location
@@ -213,7 +227,8 @@ class Augmentor(object):
             lw = ri(w / 2, w * 1.2)
             lh = ri(w / 2, w * 1.5)
             la = ri(0, 180)
-            # calculate the distance between real pupil and this, not overlapping
+
+            # calculate the distance between real pupil and new one, not overlapping
             d = np.sqrt((x - lx) ** 2 + (y - ly) ** 2)
             if d < w:
                 continue
@@ -238,6 +253,7 @@ class Augmentor(object):
         if self.cfg["prob_exposure"] < rf(0, 1):
             return in_img
 
+        # get a random exposure value based on max-min value in config file
         exp_val = rf(self.cfg["min_exposure"], self.cfg["max_exposure"])
         in_img = in_img * exp_val
         in_img = np.clip(in_img, 0, 255)
@@ -246,7 +262,7 @@ class Augmentor(object):
 
     def crop_it(self, img, lbl, max_attemps=100):
         """
-        crop the input image with a random location and size.
+         crop the input image with a random location and size.
         :param img: input size
         :param label: location of pupil
         :return: cropped image + new label based on crop
@@ -284,6 +300,7 @@ class Augmentor(object):
             cx2 = cx1 + crop_size
             cy2 = cy1 + crop_size
 
+            # check if pupil is out side of crop
             if px1 < cx1 or px1 > cx2:
                 attemps += 1
                 continue
@@ -386,48 +403,23 @@ class Augmentor(object):
         c_img = self.addExposure(c_img)
 
         c_img, c_label = self.flip_it(c_img, c_label)
-        # assert_it(c_img, c_label)
+        assert_it(c_img, c_label)
         #
         c_img, c_label = self.downscale(c_img, c_label)
-        # assert_it(c_img, c_label)
+        assert_it(c_img, c_label)
         #
         c_img, c_label = self.crop_it(c_img, c_label)
-        # assert_it(c_img, c_label)
+        assert_it(c_img, c_label)
         #
         c_img = self.addReflection(c_img)
-        # assert_it(c_img, c_label)
+        assert_it(c_img, c_label)
 
-        # c_img, c_label = self.resize_it(c_img, c_label)
-        # assert_it(c_img, c_label)
+        c_img = self.addBlur(c_img)
 
         return c_img, c_label
 
 
 if __name__ == "__main__":
-    # image_fn = "0in.jpg"
-    # img = cv2.imread(image_fn, 0)
-    # xml_path = "0gt.xml"
-    # e = ElementTree.parse(xml_path).getroot()
-    # x = np.round(np.float32(e[0].text))
-    # y = np.round(np.float32(e[1].text))
-    # w = np.round(np.float32(e[2].text))
-    # h = np.round(np.float32(e[3].text))
-    # a = np.round(np.float32(e[4].text))
-    # true_label = [x, y, w, h]
 
     ag = Augmentor('data/noisy_videos/', config)
     create_noisy_video(length=50, fps=1, with_label=True, augmentor=ag)
-
-    # pil_img = Image.fromarray(annotator(scaled_img, *scaled_label))
-    # pil_img.show()
-    #
-    # pil_img = Image.fromarray(annotator(img, *true_label))
-    # pil_img.show()
-    # print("true label {}".format(true_label))
-    # print("scaled label {}".format(scaled_label))
-
-    # ag = Augmentor('data/noisy_videos/', config)
-    #
-    # img = np.random.randint(0,255, size=(20,20), dtype=np.uint8)
-    # label = [8, 14, 3]
-    # img, lbl = ag.crop_it(img, label)

@@ -1,3 +1,4 @@
+import csv
 from random import shuffle
 from xml.etree import ElementTree
 

@@ -100,13 +100,11 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
             values = line.strip().split(",")
             data_list.append([values[0],  # image path
                               values[1],  # x
-                              values[2],  # y
-                              values[3],  # w
-                              values[4],  # h
-                              values[5]])  # a
+                              values[2]])  # y
 
     # number image to make the video
     images_len = fps * length
+    np.random.shuffle(data_list)
     start_idx = np.random.randint(0, len(data_list) - images_len)
     selected_images = data_list[start_idx:start_idx + images_len]
 
@@ -118,10 +116,10 @@ def create_noisy_video(data_path='data/valid_data.csv', length=60, fps=5, with_l
         img = cv2.imread(i[0], cv2.IMREAD_GRAYSCALE)
         x = float(i[1])
         y = float(i[2])
-        w = float(i[3])
-        h = float(i[4])
-        a = float(i[5])
-        label = [x, y, w, h, a]
+        # w = float(i[3])
+        # h = float(i[4])
+        # a = float(i[5])
+        label = [x, y]
         if augmentor is not None:
             img, label = augmentor.addNoise(img, label)
             img = np.asarray(img, dtype=np.uint8)

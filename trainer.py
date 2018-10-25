@@ -11,6 +11,14 @@ from utils import *
 
 
 def create_model(session, m_type, m_name, logger):
+    """
+    create or load the last saved model
+    :param session: tf.session
+    :param m_type: model type
+    :param m_name: model name (equal to folder name)
+    :param logger: logger
+    :return: None
+    """
     if m_type == "simple":
         model = Simple(m_name, config, logger)
     elif m_type == "YOLO":
@@ -37,6 +45,12 @@ def create_model(session, m_type, m_name, logger):
 
 
 def print_predictions(result, logger):
+    """
+    print predicted results every epoch
+    :param result: results
+    :param logger: logger
+    :return: None
+    """
     logger.log("########### Print  Predictions ################")
     logger.log("label: [\tx\t y\t w\t h\t a]")
     for r in result:
@@ -54,7 +68,16 @@ def print_predictions(result, logger):
 
 
 def main(model_type, model_name, logger):
+    """
+    train model until the maximum number of steps reached
+    :param model_type: model type
+    :param model_name: model name
+    :param logger: logger
+    :return: None
+    """
+
     with tf.Graph().as_default() as g:
+
         with tf.Session() as sess:
 
             # Create a new model or reload existing checkpoint
@@ -66,9 +89,13 @@ def main(model_type, model_name, logger):
             valid_loss = []
             train_loss = []
 
+            # initial saver for
+            #   1. save every 3 epcohs
             saver = tf.train.Saver(max_to_keep=3)
+            #   2. the best loss
             best_saver = tf.train.Saver(max_to_keep=1)
 
+            # CSV files for train and test set
             root_path = "data/"
             train_csv = "train_data.csv"
             valid_csv = "valid_data.csv"
@@ -90,13 +117,13 @@ def main(model_type, model_name, logger):
                                                     num_c=config["input_channel"],
                                                     zero_mean=True)
 
-            # check if learning rate set correctly
-            # assert int(config["total_steps"] / config["decay_step"]) == len(config["learning_rate"])
-
             while model.global_step.eval() < config["total_steps"]:
+                # get the learning rate from config file
                 lr_idx = int(model.global_step.eval() / config["decay_step"])
                 lr_idx = min(lr_idx, len(config["learning_rate"]) - 1)
                 lr = config["learning_rate"][lr_idx]
+
+                # train phase
                 with tqdm(total=config["validate_every"], unit="batch") as t:
                     for x, y, _ in train_batches:
                         if x is None:
@@ -112,6 +139,7 @@ def main(model_type, model_name, logger):
                         if model.global_step.eval() % config["validate_every"] == 0:
                             break
 
+                # validation phase
                 valid_counter = 0
                 pred_result = []
                 with tqdm(total=config["validate_for"], unit="batch") as t:
@@ -136,6 +164,7 @@ def main(model_type, model_name, logger):
                         if valid_counter == config["validate_for"]:
                             break
 
+                # print the results of validation dataset
                 print_predictions(pred_result, logger)
                 train_mean_loss = np.mean(train_loss)
                 valid_mean_loss = np.mean(valid_loss)
@@ -173,10 +202,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=class_)
 
-    model_name = "inc-test"
-    model_type = "INC"
-    model_comment = "inception 1/4. 3A 4B 4C no Att. l2=0.0001. drp=0.75. xyw label. New reflection. 192 size"
+    parser.add_argument('model_name',
+                        help="name of saved model (3A4Bh-Ref25)",
+                        )
 
-    logger = Logger(model_type, model_name, model_comment, config, dir="models/")
+    parser.add_argument('--model_type',
+                        help="INC, YOLO, simple",
+                        default="INC")
+
+    parser.add_argument('--model_message',
+                        help="briefly explain your model",
+                        default="none")
+
+    args = parser.parse_args()
+
+    model_type = args.model_type
+    model_name = args.model_name
+    model_msg = args.model_message
+
+    logger = Logger(model_type, model_name, model_msg, config, dir="models/")
     logger.log("Start training model...")
     main(model_type, model_name, logger)

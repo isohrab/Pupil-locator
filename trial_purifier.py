@@ -1,13 +1,16 @@
-import tkinter as tk
 import glob
-import pandas as pd
-from PIL import Image, ImageTk
-import cv2
 import os
-import numpy as np
-from utils import annotator
+import sys
+import tkinter as tk
 from tkinter import messagebox
 from xml.etree import ElementTree
+
+import cv2
+import numpy as np
+import pandas as pd
+from PIL import Image, ImageTk
+
+from utils import annotator
 
 FOLDER_PATH = 'purifier/folders.pkl'
 
@@ -18,7 +21,7 @@ def get_folders():
     :return: dataframe
     """
     # get the list of all folders
-    folders_path = glob.glob("data/Original-data/*/*")
+    folders_path = sorted(glob.glob("data/Original-data/belvedere/*"))
 
     # Create a dic to hold number of invalid images per folder
     f_dic = {}
@@ -26,28 +29,28 @@ def get_folders():
         f_dic[path] = 0
 
     # Get the invalid images
-    invalid_images = glob.glob("data/Original-data/*/*/*.jpg_")
+    # invalid_images = glob.glob("data/Original-data/*/*/*.jpg_")
 
     # loop over all invalid images and +1 to the folder
-    for img in invalid_images:
-        t = img.split("/")
-        f_path = '/'.join(t[:-1])
-        f_dic[f_path] += 1
+    # for img in invalid_images:
+    #     t = img.split("/")
+    #     f_path = '/'.join(t[:-1])
+    #     f_dic[f_path] += 1
 
     # make a data frame from dic
-    f_list = [[k, v] for k, v in f_dic.items()]
+    # f_list = [[k, v] for k, v in f_dic.items()]
 
-    folder_df = pd.DataFrame(data=f_list, columns=["folder", "invalids"])
+    folder_df = pd.DataFrame(data=folders_path, columns=["folder"])
     folder_df["checked"] = False
+    #
+    # folder_df = folder_df.sort_values(["invalids"], ascending=False)
 
-    folder_df = folder_df.sort_values(["invalids"], ascending=False)
-
-    folder_df.reset_index(inplace=True)
+    # folder_df.reset_index(inplace=True)
 
     folder_df.to_pickle(FOLDER_PATH)
 
     for i, row in folder_df.iterrows():
-        print("{0} : {1}".format(row.folder, row.invalids))
+        print(row.folder)
 
     return folder_df
 
@@ -58,21 +61,27 @@ def get_dataframe(_path):
     :param _path: directory path
     :return: a dataframe
     """
-    all_images = sorted(glob.glob(_path + "/*.jpg"))
+    all_images = sorted(glob.glob(_path + "/*.bmp"))
     all_xmls = sorted(glob.glob(_path + "/*.xml"))
 
     data = []
     for i, img in enumerate(all_images):
         vals = read_xml(all_xmls[i])
-        data.append([img, vals[0], vals[1], vals[2], vals[3], vals[4]])
 
-    df = pd.DataFrame(data=data, columns=["path", "xt", "yt", "wt", "ht", "angt"])
+        # add image number to sort the dataframe based on it
+        name = img.split("/")[-1]
+        num = name.split(".")[0]
+        num = int(num[:-2])
+        data.append([img, vals[0], vals[1], vals[2], vals[3], vals[4], num])
 
-    df = df.sort_values(["path"])
+    df = pd.DataFrame(data=data, columns=["path", "xt", "yt", "wt", "ht", "angt", "num"])
+
+    df = df.sort_values(["num"])
 
     df.reset_index(inplace=True)
 
     df["status"] = 0
+
 
     return df
 
@@ -211,7 +220,12 @@ class inspector_gui:
         status_0 = self.current_df.index[self.current_df["status"] == 0].tolist()
         status_0 = sorted(status_0)
         if len(status_0) == 0:
-            return -1
+            status_1 = self.current_df.index[self.current_df["status"] == 1].tolist()
+            status_1 = sorted(status_1)
+            if len(status_1) == 0:
+                return self.goto_folder(1)
+            else:
+                return status_1[0]
         else:
             return status_0[0]
 
@@ -265,14 +279,11 @@ class inspector_gui:
 
         # reset the image index
         self.img_index = self.findNextIndex()
-        if self.img_index == -1:
-            self.change_folder(1)
-            return
 
         self.n_img = len(self.current_df)
 
         # update the folder name label
-        new_text = "{0} ({1})".format(row.folder, row.invalids)
+        new_text = "{0}".format(row.folder)
         self.path_lbl.configure(text=new_text)
 
         self.current_df_dirty = False
@@ -328,7 +339,20 @@ class inspector_gui:
         # check if dataframe is already exist
         df_name = row.folder.replace("/", "_")
         df_path = "purifier/"+df_name+".pkl"
-        self.current_df.to_pickle(df_path)
+        try:
+            self.current_df.to_pickle(df_path)
+        except IOError:
+            print("IO Error")
+        except RuntimeError:
+            print("RuntimeError")
+        except EOFError:
+            print("EOFError")
+        except OSError:
+            print("OSError")
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+
+
         self.current_df_dirty = False
         messagebox.showinfo("save data", "Data saved successfuly at {}".format(df_path))
 
@@ -359,7 +383,13 @@ class inspector_gui:
 
         # update image holder
         # load image
-        img = cv2.imread(row.path, cv2.IMREAD_GRAYSCALE)
+        file = row.path.split(".")[0]
+        file = file + ".bmp"
+        if row.status == 2:
+            img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
+
+        else:
+            img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
 
         # update thumbnails before manipulation
         s_img = np.asarray(img, dtype=np.uint8)
@@ -393,12 +423,9 @@ class inspector_gui:
                 root = line.split(".")[0]
                 os.rename(root + ".jpg", root + ".jpg_")
 
-                xml1 = root + ".xml"
-                xml1 = xml1.replace("in.", "gt.")
+                xml = root.replace("in.", "gt.")
 
-                xml2 = root + ".xml_"
-                xml2 = xml2.replace("in.", "gt.")
-                os.rename(xml1, xml2)
+                os.rename(xml + ".xml", xml + ".xml_")
                 counter += 1
 
         messagebox.showinfo("rename", " {} images has been renamed".format(counter))

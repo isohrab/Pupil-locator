@@ -1,9 +1,10 @@
 import os
-from random import shuffle
+
 from PIL import Image
 from tqdm import tqdm
 
 
+# read all BMP images and convert them to jpg images. it will save 14 Gb space
 def get_filenames(root_path):
     # list all bmp files and labels
     # load all image names into the list

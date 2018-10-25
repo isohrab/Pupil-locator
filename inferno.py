@@ -1,14 +1,15 @@
-import os
-import tensorflow as tf
-import time
 import argparse
+import os
+import time
+
 import cv2
 import numpy as np
+import tensorflow as tf
+
 from config import config
-from utils import annotator, change_channel, gray_normalizer
 from logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
-from augmentor import Augmentor
+from utils import annotator, change_channel, gray_normalizer
 
 
 def load_model(session, m_type, m_name, logger):
@@ -16,7 +17,7 @@ def load_model(session, m_type, m_name, logger):
     best_dir = "best_loss"
 
     # check model dir
-    model_path = "models/"+m_name
+    model_path = "models/" + m_name
     path = os.path.join(model_path, best_dir)
     if not os.path.exists(path):
         raise FileNotFoundError
@@ -34,6 +35,7 @@ def load_model(session, m_type, m_name, logger):
     else:
         raise ValueError
 
+    # load the best saved weights
     ckpt = tf.train.get_checkpoint_state(path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         logger.log('Reloading model parameters..')
@@ -45,6 +47,72 @@ def load_model(session, m_type, m_name, logger):
     return model
 
 
+def rescale(image):
+    """
+    If the input video is other than network size, it will resize the input video
+    :param image: a frame form input video
+    :return: scaled down frame
+    """
+    scale_side = max(image.shape)
+    # image width and height are equal to 192
+    scale_value = config["input_width"] / scale_side
+
+    # scale down or up the input image
+    scaled_image = cv2.resize(image, dsize=None, fx=scale_value, fy=scale_value)
+
+    # convert to numpy array
+    scaled_image = np.asarray(scaled_image, dtype=np.uint8)
+
+    # one of pad should be zero
+    w_pad = int((config["input_width"] - scaled_image.shape[1]) / 2)
+    h_pad = int((config["input_width"] - scaled_image.shape[0]) / 2)
+
+    # create a new image with size of: (config["image_width"], config["image_height"])
+    new_image = np.ones((config["input_width"], config["input_height"]), dtype=np.uint8) * 250
+
+    # put the scaled image in the middle of new image
+    new_image[h_pad:h_pad + scaled_image.shape[0], w_pad:w_pad + scaled_image.shape[1]] = scaled_image
+
+    return new_image
+
+
+def upscale_preds(_preds, _shapes):
+    """
+    Get the predictions and upscale them to original size of video
+    :param preds:
+    :param shapes:
+    :return: upscales x and y
+    """
+    # we need to calculate the pads to remove them from predicted labels
+    pad_side = np.max(_shapes)
+    # image width and height are equal to 384
+    downscale_value = config["input_width"] / pad_side
+
+    scaled_height = _shapes[0] * downscale_value
+    scaled_width = _shapes[1] * downscale_value
+
+    # one of pad should be zero
+    w_pad = (config["input_width"] - scaled_width) / 2
+    h_pad = (config["input_width"] - scaled_height) / 2
+
+    # remove the pas from predicted label
+    x = _preds[0] - w_pad
+    y = _preds[1] - h_pad
+    w = _preds[2]
+
+    # calculate the upscale value
+    upscale_value = pad_side / config["input_height"]
+
+    # upscale preds
+    x = x * upscale_value
+    y = y * upscale_value
+    w = w * upscale_value
+
+    return x, y, w
+
+
+# load a the model with the best saved state from file and predict the pupil location
+# on the input video. finaly save the video with the predicted pupil on disk
 def main(m_type, m_name, logger, video_path=None, write_output=True):
     with tf.Session() as sess:
 
@@ -62,37 +130,39 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
         tic = time.time()
         frames = []
         preds = []
-        # exponential weight decay
-
 
         while ret:
             ret, frame = cap.read()
 
             if ret:
                 # Our operations on the frame come here
+                frames.append(frame)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                f_shape = frame.shape
                 if frame.shape[0] != 192:
-                    frame = cv2.resize(frame, (192, 192))
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                image = gray_normalizer(gray)
-                image = change_channel(image, config["image_channel"])
+                    frame = rescale(frame)
+
+                image = gray_normalizer(frame)
+                image = change_channel(image, config["input_channel"])
                 [p] = model.predict(sess, [image])
-                preds.append(p)
-                frames.append(gray)
+                x, y, w = upscale_preds(p, f_shape)
+
+                preds.append([x, y, w])
+                # frames.append(gray)
                 counter += 1
 
         toc = time.time()
         print("{0:0.2f} FPS".format(counter / (toc - tic)))
 
-    # prepare a video write to show the result
-    beta = np.ones((config["output_dim"]), dtype=np.float32) * 0.0
-    loc = np.ones((config["output_dim"]), dtype=np.float32)
+    # get the video size
+    video_size = frames[0].shape[0:2]
     if write_output:
-        video = cv2.VideoWriter("predicted_video.avi", cv2.VideoWriter_fourcc(*"XVID"), 30, (192, 192))
+        # prepare a video write to show the result
+        video = cv2.VideoWriter("predicted_video.avi", cv2.VideoWriter_fourcc(*"XVID"), 30,
+                                (video_size[1], video_size[0]))
 
         for i, img in enumerate(frames):
-            loc = beta * loc + (1-beta) * preds[i]
-            # if (i+1) % 2 == 0:
-            labeled_img = annotator(img, *preds[i])
+            labeled_img = annotator((0, 250, 0), img, *preds[i])
             video.write(labeled_img)
 
         # close the video
@@ -107,30 +177,25 @@ if __name__ == "__main__":
                                      formatter_class=class_)
 
     parser.add_argument('--model_type',
-                        help="YOLO, simple",
-                        default="YOLO")
+                        help="INC, YOLO, simple",
+                        default="INC")
 
     parser.add_argument('--model_name',
-                        help="name of saved model")
+                        help="name of saved model (3A4Bh-Ref25)",
+                        default="3A4Bh-Ref25")
 
-    parser.add_argument('--video_input',
-                        help="path to video file, empty for camera",
-                        default="0")
-
+    parser.add_argument('video_path',
+                        help="path to video file, empty for camera")
 
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "NAS_Conv_F"
+    model_name = args.model_name
     model_type = args.model_type
-    model_type = "NAS"
-    video_input = args.video_input
+    video_path = args.video_path
 
+    # initial a logger
     logger = Logger(model_type, model_name, "", config, dir="models/")
     logger.log("Start inferring model...")
 
-    # create a dummy video
-    # ag = Augmentor('noisy_videos', config)
-    # video_input = create_noisy_video(length=60, fps=5, augmentor=ag)
-    video_input = "data/test_videos/6.mp4"
-    main(model_type, model_name, logger, video_input)
+    main(model_type, model_name, logger, video_path)

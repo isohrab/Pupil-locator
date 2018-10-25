@@ -1,8 +1,10 @@
 import os
 from random import shuffle
-import numpy as np
-from utils import change_channel, gray_normalizer
+
 import cv2
+import numpy as np
+
+from utils import change_channel, gray_normalizer
 
 
 class Batchizer(object):
@@ -14,9 +16,11 @@ class Batchizer(object):
     def __init__(self, data_path, batch_size):
         self.batch_size = batch_size
 
+        # check if CSV files are exist
         if not os.path.isfile(data_path):
             raise FileNotFoundError
 
+        # load the records into memory
         self.data_list = []
         with open(data_path, "r") as f:
             for line in f:
@@ -36,14 +40,19 @@ class Batchizer(object):
 
     def batches(self, ag, lbl_len=4, num_c=1,
                 zero_mean=False):
-        # before each epoch, shuffle data
+
+        # infinitely do ....
         while True:
+            # before each epoch, shuffle data
             shuffle(self.data_list)
 
             images = []
             labels = []
             img_names = []
+
+            # for all records in data list
             for row in self.data_list:
+                # read the image and ground truth
                 image = cv2.imread(row[0], cv2.IMREAD_GRAYSCALE)
                 label = np.asarray(row[1:], dtype=np.float32)
 
@@ -68,6 +77,8 @@ class Batchizer(object):
                 img_names.append(row[0])
                 if len(images) == self.batch_size:
                     yield images, labels, img_names
+
+                    # empty the list for next yield
                     images = []
                     labels = []
                     img_names = []

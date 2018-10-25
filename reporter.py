@@ -10,7 +10,7 @@ from tqdm import tqdm
 from config import config
 from logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
-from utils import gray_normalizer, annotator, gray_denormalizer, change_channel
+from utils import gray_normalizer, annotator, change_channel
 
 dataset_names = ["data set I",
                  "data set II",
@@ -244,7 +244,7 @@ def read_batch(csv_path, b_size, d_name):
     images = []
     labels = []
     shapes = []
-
+    pngs = []
     with open(csv_path, mode='r') as f:
         # pass the header
         f.readline()
@@ -253,15 +253,15 @@ def read_batch(csv_path, b_size, d_name):
 
             # read the image
             image_name = real_image_name(values[1])
-            img = cv2.imread("data/emma_data/{}/{}.png".format(d_name, image_name), cv2.IMREAD_GRAYSCALE)
+            png = cv2.imread("data/emma_data/{}/{}.png".format(d_name, image_name), cv2.IMREAD_GRAYSCALE)
 
-            shapes.append(img.shape)
+            shapes.append(png.shape)
             # read and convert the labels
             x = int(values[2]) / 2
-            y = int(img.shape[0] - int(values[3]) / 2)
+            y = int(png.shape[0] - int(values[3]) / 2)
 
             # rescale images to 192x192 pixels
-            img = rescale(img)
+            img = rescale(png)
 
             # normalize image and label
             img = gray_normalizer(img)
@@ -271,15 +271,17 @@ def read_batch(csv_path, b_size, d_name):
 
             images.append(img)
             labels.append([x, y])
+            pngs.append(png)
             if len(images) == b_size:
-                yield images, np.asarray(labels, dtype=np.float32), np.asarray(shapes, dtype=np.float32)
+                yield images, np.asarray(labels, dtype=np.float32), np.asarray(shapes, dtype=np.float32), pngs
                 images = []
                 labels = []
                 shapes = []
+                pngs = []
 
     # yield the rest
     if len(images) != 0:
-        yield images, np.asarray(labels, dtype=np.float32), np.asarray(shapes, dtype=np.float32)
+        yield images, np.asarray(labels, dtype=np.float32), np.asarray(shapes, dtype=np.float32), pngs
 
 
 def video_creator(video_name, images, labels, fps=15):
@@ -290,12 +292,12 @@ def video_creator(video_name, images, labels, fps=15):
     :param labels: predicted labels with a value between 0-1
     :return: None
     """
-    video = cv2.VideoWriter(video_name + "pred.avi", cv2.VideoWriter_fourcc(*'XVID'), fps,
-                            (config["input_height"], config["input_width"]))
+    f_size = images[0].shape
+    video = cv2.VideoWriter(video_name + " pred.mp4", cv2.VideoWriter_fourcc(*'MP4V'), fps, (f_size[1], f_size[0]))
 
     for img, lbl in zip(images, labels):
         img = np.squeeze(img)
-        img = gray_denormalizer(img)
+        # img = gray_denormalizer(img)
         annotated_img = annotator((0, 250, 0), img, *lbl)
         video.write(annotated_img)
 
@@ -376,15 +378,36 @@ def upscale_preds(_preds, _shapes):
 
     x = x * max_s
     y = y * max_s
+    w = _preds[:, 2] * max_s
 
-    return x, y
+    return x, y, w
 
 
-def main(m_type, m_name, logger):
+def main(m_type, m_name, logger, save_videos=False):
+    """
+    run an evaluation on the Test datasets: ExCuSe, ElSe, PupilNet, Swirski, LPW
+    :param m_type: need model type: inception, yolo, gap,...
+    :param m_name: name of the model ( model folder name: 3A4Bh-Ref25)
+    :param logger: need logger to log the events
+    :return: show the results in terminal
+    """
+    run_meta = tf.RunMetadata()
     with tf.Session() as sess:
 
         # load best model
         model = load_model(sess, m_type, m_name, logger)
+        # calculate the FLOPS
+        opts_f = tf.profiler.ProfileOptionBuilder.float_operation()
+        flops = tf.profiler.profile(run_meta=run_meta, cmd='op', options=opts_f)
+
+        opts_p = tf.profiler.ProfileOptionBuilder.trainable_variables_parameter()
+        params = tf.profiler.profile(sess.graph, run_meta=run_meta, cmd='op', options=opts_p)
+
+        if flops is not None:
+            print('TF stats gives', flops.total_float_ops)
+
+        if params is not None:
+            print('TF stats gives', params.total_parameters)
 
         # print the result for different pixel error
         pixel_errors = [1, 2, 3, 4, 5, 7, 10, 15, 20]
@@ -419,10 +442,10 @@ def main(m_type, m_name, logger):
                 pred_labels = []
 
                 # loop over batch of images
-                for images, truths, shapes in batch:
+                for images, truths, shapes, pngs in batch:
                     predictions = model.predict(sess, images)
 
-                    upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
+                    upscale_preds_x, upscale_preds_y, w = upscale_preds(predictions, shapes)
                     # calculate the difference
                     a = upscale_preds_x - truths[:, 0]
                     b = upscale_preds_y - truths[:, 1]
@@ -433,11 +456,17 @@ def main(m_type, m_name, logger):
                     t.update()
 
                     # add images and predicted labels to test_images and pred_labels to creating the video
-                    test_images.extend(images)
-                    pred_labels.extend(predictions)
+                    len_data = len(upscale_preds_x)
+                    upscale_preds_x = np.reshape(upscale_preds_x, newshape=(len_data, 1))
+                    upscale_preds_y = np.reshape(upscale_preds_y, newshape=(len_data, 1))
+                    w = np.reshape(w, newshape=(len_data, 1))
+                    upscale_center = np.concatenate((upscale_preds_x, upscale_preds_y, w), axis=1)
+                    test_images.extend(pngs)
+                    pred_labels.extend(upscale_center)
 
                 # create the predicted labels on test sets
-                video_creator(dataset_name, test_images, pred_labels)
+                if save_videos:
+                    video_creator(dataset_name, test_images, pred_labels)
 
         # save the results in a dic
         dataset_errors = {}
@@ -450,70 +479,70 @@ def main(m_type, m_name, logger):
                 dataset_errors[key].append(acc)
 
         print_resutls(dataset_errors, pixel_errors, dataset_names)
+        return
+        print("####### LPW #######")
+        # run model on LPW dataset
+        lpw_results = {}
+        lpw_r = lpw_reader(batch_size=2 * config["batch_size"], normalize_image=True)
+        for imgs, truths, d_name, shapes in lpw_r:
+            # add dataset name to results dict
+            if d_name not in lpw_results.keys():
+                lpw_results[d_name] = []
 
-        # print("####### LPW #######")
-        # # run model on LPW dataset
-        # lpw_results = {}
-        # lpw_r = lpw_reader(batch_size=2 * config["batch_size"], normalize_image=True)
-        # for imgs, truths, d_name, shapes in lpw_r:
-        #     # add dataset name to results dict
-        #     if d_name not in lpw_results.keys():
-        #         lpw_results[d_name] = []
-        #
-        #     predictions = model.predict(sess, imgs)
-        #
-        #     upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
-        #
-        #     # calculate the difference
-        #     a = upscale_preds_x - truths[:, 0]
-        #     b = upscale_preds_y - truths[:, 1]
-        #
-        #     diff = np.sqrt((a * a + b * b))
-        #
-        #     lpw_results[d_name].extend(diff)
-        #
-        # lpw_errors = {}
-        #
-        # for key, val in lpw_results.items():
-        #     lpw_errors[key] = []
-        #     for e in pixel_errors:
-        #         d = np.asarray(val, dtype=np.float32)
-        #         acc = np.mean(np.asarray(d < e, dtype=np.int))
-        #         lpw_errors[key].append(acc)
-        #
-        # print_resutls(lpw_errors, pixel_errors)
+            predictions = model.predict(sess, imgs)
 
-        # print("####### SWIRSKI #######")
-        # # run model on LPW dataset
-        # swk_results = {}
-        # swk_r = swirski_reader(batch_size=2 * config["batch_size"])
-        # for imgs, truths, d_name, shapes in swk_r:
-        #     # add dataset name to results dict
-        #     if d_name not in swk_results.keys():
-        #         swk_results[d_name] = []
-        #
-        #     predictions = model.predict(sess, imgs)
-        #
-        #     upscale_preds_x, upscale_preds_y = upscale_preds(predictions, shapes)
-        #
-        #     # calculate the difference
-        #     a = upscale_preds_x - truths[:, 0]
-        #     b = upscale_preds_y - truths[:, 1]
-        #
-        #     diff = np.sqrt((a * a + b * b))
-        #
-        #     swk_results[d_name].extend(diff)
-        #
-        # swk_errors = {}
-        #
-        # for key, val in swk_results.items():
-        #     swk_errors[key] = []
-        #     for e in pixel_errors:
-        #         d = np.asarray(val, dtype=np.float32)
-        #         acc = np.mean(np.asarray(d < e, dtype=np.int))
-        #         swk_errors[key].append(acc)
-        #
-        # print_resutls(swk_errors, pixel_errors)
+            upscale_preds_x, upscale_preds_y, w = upscale_preds(predictions, shapes)
+
+            # calculate the difference
+            a = upscale_preds_x - truths[:, 0]
+            b = upscale_preds_y - truths[:, 1]
+
+            diff = np.sqrt((a * a + b * b))
+
+            lpw_results[d_name].extend(diff)
+
+        lpw_errors = {}
+
+        for key, val in lpw_results.items():
+            lpw_errors[key] = []
+            for e in pixel_errors:
+                d = np.asarray(val, dtype=np.float32)
+                acc = np.mean(np.asarray(d < e, dtype=np.int))
+                lpw_errors[key].append(acc)
+
+        print_resutls(lpw_errors, pixel_errors)
+
+        print("####### SWIRSKI #######")
+        # run model on LPW dataset
+        swk_results = {}
+        swk_r = swirski_reader(batch_size=2 * config["batch_size"])
+        for imgs, truths, d_name, shapes in swk_r:
+            # add dataset name to results dict
+            if d_name not in swk_results.keys():
+                swk_results[d_name] = []
+
+            predictions = model.predict(sess, imgs)
+
+            upscale_preds_x, upscale_preds_y, w = upscale_preds(predictions, shapes)
+
+            # calculate the difference
+            a = upscale_preds_x - truths[:, 0]
+            b = upscale_preds_y - truths[:, 1]
+
+            diff = np.sqrt((a * a + b * b))
+
+            swk_results[d_name].extend(diff)
+
+        swk_errors = {}
+
+        for key, val in swk_results.items():
+            swk_errors[key] = []
+            for e in pixel_errors:
+                d = np.asarray(val, dtype=np.float32)
+                acc = np.mean(np.asarray(d < e, dtype=np.int))
+                swk_errors[key].append(acc)
+
+        print_resutls(swk_errors, pixel_errors)
 
 
 if __name__ == "__main__":
@@ -522,24 +551,22 @@ if __name__ == "__main__":
                                      formatter_class=class_)
 
     parser.add_argument('--model_type',
-                        help="YOLO, simple",
-                        default="YOLO")
+                        help="INC, YOLO, simple",
+                        default="INC")
 
     parser.add_argument('--model_name',
-                        help="name of saved model")
+                        help="name of saved model (3A4Bh-Ref25)",
+                        default="3A4Bh-Ref25")
 
-    parser.add_argument('--video_input',
-                        help="path to video file, empty for camera",
-                        default="0")
 
     args = parser.parse_args()
 
     # model_name = args.model_name
-    model_name = "inc-test"
+    model_name = args.model_name
     model_type = args.model_type
-    model_type = "INC"
 
+    # initial a logger
     logger = Logger(model_type, model_name, "", config, dir="models/")
-    logger.log("Start inferring model...")
+    logger.log("Start reporting...")
 
     main(model_type, model_name, logger)

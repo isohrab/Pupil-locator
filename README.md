@@ -21,6 +21,11 @@ To watch the predicted results please visit this [youtube playlist](https://www.
 ### Run model
 Use model to predict the pupil location in a video use this command:
 ```
-python inferno.py 
+python inferno.py PATH_TO_VIDEO_FILE
 
 ```
+or you can pass 0 for camera.
+
+### Acknowledgement 
+
+This work has been accomplished as a project for my master thesis. I would like to thank Dr. Shahram Eivazi for his generous helps and Thiago Santini for providing the training data. 

@@ -4,13 +4,15 @@ import os
 
 import cv2
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tqdm import tqdm
 
 from config import config
 from logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from utils import gray_normalizer, annotator, change_channel
+
+tf.disable_v2_behavior()
 
 dataset_names = ["data set I",
                  "data set II",

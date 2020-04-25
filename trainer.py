@@ -1,6 +1,6 @@
 import argparse
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tqdm import tqdm
 
 from augmentor import Augmentor
@@ -8,6 +8,8 @@ from batchizer import Batchizer
 from logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from utils import *
+
+tf.disable_v2_behavior()
 
 
 def create_model(session, m_type, m_name, logger):

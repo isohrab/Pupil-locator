@@ -4,12 +4,14 @@ import time
 
 import cv2
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from config import config
 from logger import Logger
 from models import Simple, NASNET, Inception, GAP, YOLO
 from utils import annotator, change_channel, gray_normalizer
+
+tf.disable_v2_behavior()
 
 
 def load_model(session, m_type, m_name, logger):

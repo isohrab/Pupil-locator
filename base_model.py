@@ -1,5 +1,7 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.python.ops import control_flow_ops
+
+tf.disable_v2_behavior()
 
 # YOLO implementation
 # https://github.com/WojciechMormul/yolo2/blob/master/train.py

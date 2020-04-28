@@ -1,8 +1,10 @@
-import tensorflow as tf
+import tensorflow
+import tensorflow.compat.v1 as tf
 import tensorflow_hub as hub
-from tensorflow.contrib.layers import xavier_initializer_conv2d, l2_regularizer
 
 from base_model import BaseModel
+
+tf.disable_v2_behavior()
 
 
 class Simple(object):
@@ -20,7 +22,7 @@ class Simple(object):
 
     def init_forward(self):
         cnn_input = self.X
-        xavi = tf.contrib.layers.xavier_initializer_conv2d()
+        xavi = tensorflow.initializers.GlorotUniform(),
         assert len(self.cfg["filter_sizes"]) == len(self.cfg["n_filters"])
 
         for i in range(len(self.cfg["filter_sizes"])):
@@ -115,8 +117,8 @@ class YOLO(BaseModel):
             # x = tf.nn.dropout(x, keep_prob=self.keep_prob)
             x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
                                  use_bias=False,
-                                 kernel_initializer=xavier_initializer_conv2d(),
-                                 kernel_regularizer=l2_regularizer(self.cfg["l2_beta"]))
+                                 kernel_initializer=tensorflow.initializers.GlorotUniform(),
+                                 kernel_regularizer=tf.keras.regularizers.l2(self.cfg["l2_beta"]))
 
             x = tf.layers.batch_normalization(x, training=train_logical)
 
@@ -246,7 +248,7 @@ class YOLO(BaseModel):
         x = tf.layers.conv2d(x, self.cfg["output_dim"], (1, 1),
                              padding='SAME',
                              use_bias=False,
-                             kernel_initializer=xavier_initializer_conv2d(),
+                             kernel_initializer=tensorflow.initializers.GlorotUniform(),
                              name="conv27")
 
         x = tf.nn.leaky_relu(x, alpha=0.1, name="ReLu")
@@ -284,8 +286,8 @@ class NASNET(BaseModel):
             # x = tf.nn.dropout(x, keep_prob=self.keep_prob)
             x = tf.layers.conv2d(x, depth, kernel, padding='SAME',
                                  use_bias=False,
-                                 kernel_initializer=xavier_initializer_conv2d(),
-                                 kernel_regularizer=l2_regularizer(self.cfg["l2_beta"]))
+                                 kernel_initializer=tensorflow.initializers.GlorotUniform(),
+                                 kernel_regularizer=tf.keras.regularizers.l2(self.cfg["l2_beta"]))
 
             x = tf.layers.batch_normalization(x, training=train_logical)
 
@@ -343,7 +345,7 @@ class Inception(BaseModel):
     def __init__(self, model_name, cfg, logger):
         super(Inception, self).__init__(model_name, cfg, logger)
         self.m = 0.5
-        self.l2_reg = l2_regularizer(cfg["l2_beta"])
+        self.l2_reg = tf.keras.regularizers.l2(cfg["l2_beta"])
         self.logger.log("building the model...")
         self.init_placeholders()
         self.init_forward()
@@ -367,7 +369,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_0a_1x1")
 
                 branch_0 = self.bn_lrelu(branch_0, is_training)
@@ -380,7 +382,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -390,7 +392,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_1b_3x3")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -402,7 +404,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_2a_1x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -412,7 +414,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_2b_3x3")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -422,7 +424,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_2c_3x3")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -440,7 +442,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_3b_1x1")
                 branch_3 = self.bn_lrelu(branch_3, is_training)
 
@@ -458,7 +460,7 @@ class Inception(BaseModel):
                                             strides=(2, 2),
                                             padding='VALID',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_0a_3x3V2")
 
                 branch_0 = self.bn_lrelu(branch_0, is_training)
@@ -471,7 +473,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding='SAME',
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_1a_1x1")
 
                 branch_1 = self.bn_lrelu(branch_1, is_training)
@@ -482,7 +484,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2_1b_3x3")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -492,7 +494,7 @@ class Inception(BaseModel):
                                             strides=(2, 2),
                                             padding="VALID",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2_1c_3x3V2")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -518,7 +520,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_0a_1x1")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -530,7 +532,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -540,7 +542,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_1b_1x7")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -550,7 +552,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_1c_7x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -562,7 +564,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2_2a_1x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -572,7 +574,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_2b_1x7")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -582,7 +584,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_2c_7x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -592,7 +594,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_2d_1x7")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -602,7 +604,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_2e_7x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -620,7 +622,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_3b_1x1")
                 branch_3 = self.bn_lrelu(branch_3, is_training)
 
@@ -638,7 +640,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_0a_1x1")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -648,7 +650,7 @@ class Inception(BaseModel):
                                             strides=(2, 2),
                                             padding="VALID",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_0b_3x3V2")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -660,7 +662,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -670,7 +672,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_1b_1x7")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -680,7 +682,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_1c_7x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -690,7 +692,7 @@ class Inception(BaseModel):
                                             strides=(2, 2),
                                             padding="VALID",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_1d_3x3V2")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -716,7 +718,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_0a_1x1")
                 branch_0 = self.bn_lrelu(branch_0, is_training)
 
@@ -728,7 +730,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_1a_1x1")
                 branch_1 = self.bn_lrelu(branch_1, is_training)
 
@@ -738,7 +740,7 @@ class Inception(BaseModel):
                                              strides=(1, 1),
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
-                                             kernel_initializer=xavier_initializer_conv2d(),
+                                             kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                              name="conv2d_1b0_1x3")
                 branch_1a = self.bn_lrelu(branch_1a, is_training)
 
@@ -748,7 +750,7 @@ class Inception(BaseModel):
                                              strides=(1, 1),
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
-                                             kernel_initializer=xavier_initializer_conv2d(),
+                                             kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                              name="conv2d_1b1_3x1")
                 branch_1b = self.bn_lrelu(branch_1b, is_training)
 
@@ -762,7 +764,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_2a_1x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -772,7 +774,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_2b_1x3")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -782,7 +784,7 @@ class Inception(BaseModel):
                                             strides=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="conv2d_2c_3x1")
                 branch_2 = self.bn_lrelu(branch_2, is_training)
 
@@ -792,7 +794,7 @@ class Inception(BaseModel):
                                              strides=(1, 1),
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
-                                             kernel_initializer=xavier_initializer_conv2d(),
+                                             kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                              name="conv2d_2d0_1x3")
                 branch_2a = self.bn_lrelu(branch_2a, is_training)
 
@@ -802,7 +804,7 @@ class Inception(BaseModel):
                                              strides=(1, 1),
                                              padding="SAME",
                                              kernel_regularizer=self.l2_reg,
-                                             kernel_initializer=xavier_initializer_conv2d(),
+                                             kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                              name="conv2d_2d1_3x1")
                 branch_2b = self.bn_lrelu(branch_2b, is_training)
 
@@ -820,7 +822,7 @@ class Inception(BaseModel):
                                             kernel_size=(1, 1),
                                             padding="SAME",
                                             kernel_regularizer=self.l2_reg,
-                                            kernel_initializer=xavier_initializer_conv2d(),
+                                            kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                             name="Conv2d_3b_1x1")
                 branch_3 = self.bn_lrelu(branch_3, is_training)
 
@@ -839,7 +841,7 @@ class Inception(BaseModel):
                                    strides=(2, 2),
                                    padding="VALID",
                                    kernel_regularizer=self.l2_reg,
-                                   kernel_initializer=xavier_initializer_conv2d(),
+                                   kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                    name="conv2d_stem0_3x3V2")
             net = self.bn_lrelu(net, self.train_flag)
             self.logger.log("stem0 shape {}".format(net.get_shape()))
@@ -850,7 +852,7 @@ class Inception(BaseModel):
                                    strides=(1, 1),
                                    padding="VALID",
                                    kernel_regularizer=self.l2_reg,
-                                   kernel_initializer=xavier_initializer_conv2d(),
+                                   kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                    name="conv2d_stem1_3x3V1")
             net = self.bn_lrelu(net, self.train_flag)
             self.logger.log("stem1 shape {}".format(net.get_shape()))
@@ -861,7 +863,7 @@ class Inception(BaseModel):
                                    strides=(1, 1),
                                    padding="SAME",
                                    kernel_regularizer=self.l2_reg,
-                                   kernel_initializer=xavier_initializer_conv2d(),
+                                   kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                    name="Conv2d_stem2_3x3")
             net = self.bn_lrelu(net, self.train_flag)
             self.logger.log("stem2 shape {}".format(net.get_shape()))
@@ -874,7 +876,7 @@ class Inception(BaseModel):
                                              strides=(2, 2),
                                              padding="VALID",
                                              kernel_regularizer=self.l2_reg,
-                                             kernel_initializer=xavier_initializer_conv2d(),
+                                             kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                              name="Conv2d_0a_3x3s2")
                     net_a = self.bn_lrelu(net_a, self.train_flag)
 
@@ -897,7 +899,7 @@ class Inception(BaseModel):
                                                 strides=(1, 1),
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
-                                                kernel_initializer=xavier_initializer_conv2d(),
+                                                kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                                 name="Conv2d_0a_3x3")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -907,7 +909,7 @@ class Inception(BaseModel):
                                                 strides=(1, 1),
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
-                                                kernel_initializer=xavier_initializer_conv2d(),
+                                                kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                                 name="Conv2d_0b_7x1")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -917,7 +919,7 @@ class Inception(BaseModel):
                                                 strides=(1, 1),
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
-                                                kernel_initializer=xavier_initializer_conv2d(),
+                                                kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                                 name="Conv2d_0c_1x7")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -927,7 +929,7 @@ class Inception(BaseModel):
                                                 strides=(1, 1),
                                                 padding="VALID",
                                                 kernel_regularizer=self.l2_reg,
-                                                kernel_initializer=xavier_initializer_conv2d(),
+                                                kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                                 name="Conv2d_0d_3x3V")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -939,7 +941,7 @@ class Inception(BaseModel):
                                                 strides=(1, 1),
                                                 padding="SAME",
                                                 kernel_regularizer=self.l2_reg,
-                                                kernel_initializer=xavier_initializer_conv2d(),
+                                                kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                                 name="Conv2d_0a_3x3")
                     branch_1 = self.bn_lrelu(branch_1, self.train_flag)
 
@@ -949,7 +951,7 @@ class Inception(BaseModel):
                                                 strides=(1, 1),
                                                 padding="VALID",
                                                 kernel_regularizer=self.l2_reg,
-                                                kernel_initializer=xavier_initializer_conv2d(),
+                                                kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                                 name="Conv2d_0b_3x3V")
                     branch_1 = self.bn_lrelu(branch_1, self.train_flag)
 
@@ -965,7 +967,7 @@ class Inception(BaseModel):
                                                 strides=(2, 2),
                                                 padding="VALID",
                                                 kernel_regularizer=self.l2_reg,
-                                                kernel_initializer=xavier_initializer_conv2d(),
+                                                kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                                 name="Conv2d_0a_3x3v")
                     branch_0 = self.bn_lrelu(branch_0, self.train_flag)
 
@@ -1035,7 +1037,7 @@ class Inception(BaseModel):
             net = tf.reshape(self.GAP, (-1, 1, 1, units), name="reshaping")
             net = tf.layers.conv2d(net, self.cfg["output_dim"], (1, 1),
                                    padding='VALID',
-                                   kernel_initializer=xavier_initializer_conv2d(),
+                                   kernel_initializer=tensorflow.initializers.GlorotUniform(),
                                    kernel_regularizer=self.l2_reg,
                                    use_bias=False,
                                    name="final_conv")
@@ -1081,8 +1083,8 @@ class GAP(object):
                                          kernel_size=self.cfg["filter_sizes"][i],
                                          padding='same',
                                          activation=tf.nn.leaky_relu,
-                                         kernel_initializer=xavier_initializer_conv2d(),
-                                         kernel_regularizer=l2_regularizer(self.cfg["l2_beta"]))
+                                         kernel_initializer=tensorflow.initializers.GlorotUniform(),
+                                         kernel_regularizer=tf.keras.regularizers.l2(self.cfg["l2_beta"]))
 
             cnn_input = tf.layers.batch_normalization(cnn_input,
                                                       training=self.train_flag)

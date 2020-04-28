@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 import cv2
 import numpy as np
 import pandas as pd
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from PIL import Image, ImageTk
 
 from config import config
@@ -15,6 +15,8 @@ from logger import Logger
 from reporter import load_model
 from utils import annotator
 from utils import change_channel, gray_normalizer
+
+tf.disable_v2_behavior()
 
 DF3P_PATH = "purifier/df3p.pkl"
 EXPORT_PATH = "purifier/incorrects.txt"

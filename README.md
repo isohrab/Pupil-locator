@@ -29,3 +29,14 @@ or you can pass 0 for camera.
 ### Acknowledgement 
 
 This work has been accomplished as a project for my master thesis. I would like to thank Dr. Shahram Eivazi for his generous helps and Thiago Santini for providing the training data. 
+
+### Citation:
+We published a nice paper from my work. If you want to reference it, please use following citation:
+
+```text
+Shaharam Eivazi, Thiago Santini, Alireza Keshavarzi, Thomas Kübler, and Andrea Mazzei. 2019.
+Improving real-time CNN-based pupil detection through domain-specific data augmentation.
+In Proceedings of the 11th ACM Symposium on Eye Tracking Research & Applications (ETRA ’19).
+Association for Computing Machinery, New York, NY, USA, Article 40, 1–6.
+DOI:https://doi.org/10.1145/3314111.3319914
+```

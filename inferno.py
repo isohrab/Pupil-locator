@@ -1,6 +1,8 @@
 import argparse
 import os
 import time
+from PIL import Image
+
 
 import cv2
 import numpy as np
@@ -120,57 +122,40 @@ def main(m_type, m_name, logger, video_path=None, write_output=True):
 
         # load best model
         model = load_model(sess, m_type, m_name, logger)
+        dir_list = os.listdir(video_path)
+        print(video_path)
+        print(dir_list)
+        arr = video_path.split('/')
+        arr = arr[:len(arr)-1]
+        arr.append("output_dir")
+        output_path = '/'.join(arr)
+        try:
+            os.mkdir(output_path)
+        except:
+            pass
+        for file in dir_list:
+            image_file = video_path + '/' + file
+            output_dir = output_path + '/' + file
+            preds = []
+            # load the video or camera
+            frame = cv2.imread(image_file)
+            ori_image = cv2.imread(image_file)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            f_shape = frame.shape
+            if frame.shape[0] != 192:
+                frame = rescale(frame)
 
-        # check input source is a file or camera
-        if video_path == None:
-            video_path = 0
+            image = gray_normalizer(frame)
+            image = change_channel(image, config["input_channel"])
 
-        # load the video or camera
-        cap = cv2.VideoCapture(video_path)
-        ret = True
-        counter = 0
-        tic = time.time()
-        frames = []
-        preds = []
+            [p] = model.predict(sess, [image])
+            x, y, w = upscale_preds(p, f_shape)
 
-        while ret:
-            ret, frame = cap.read()
+            preds.append([x, y, w])
 
-            if ret:
-                # Our operations on the frame come here
-                frames.append(frame)
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                f_shape = frame.shape
-                if frame.shape[0] != 192:
-                    frame = rescale(frame)
-
-                image = gray_normalizer(frame)
-                image = change_channel(image, config["input_channel"])
-                [p] = model.predict(sess, [image])
-                x, y, w = upscale_preds(p, f_shape)
-
-                preds.append([x, y, w])
-                # frames.append(gray)
-                counter += 1
-
-        toc = time.time()
-        print("{0:0.2f} FPS".format(counter / (toc - tic)))
-
-    # get the video size
-    video_size = frames[0].shape[0:2]
-    if write_output:
-        # prepare a video write to show the result
-        video = cv2.VideoWriter("predicted_video.avi", cv2.VideoWriter_fourcc(*"XVID"), 30,
-                                (video_size[1], video_size[0]))
-
-        for i, img in enumerate(frames):
-            labeled_img = annotator((0, 250, 0), img, *preds[i])
-            video.write(labeled_img)
-
-        # close the video
-        cv2.destroyAllWindows()
-        video.release()
-    print("Done...")
+            labeled_img = annotator((0, 250, 250), ori_image, *preds[0])
+            save_img = Image.fromarray(ori_image, 'RGB')
+            save_img.save(output_dir)
 
 
 if __name__ == "__main__":
